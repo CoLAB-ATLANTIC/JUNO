@@ -1,1 +1,6 @@
 notebooks/.ipynb_checkpoints/*
+data/*
+notebooks/jfm.csv
+notebooks/amj.csv
+notebooks/jas.csv
+notebooks/ond.csv
