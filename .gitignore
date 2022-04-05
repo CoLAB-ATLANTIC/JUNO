@@ -4,3 +4,8 @@ notebooks/jfm.csv
 notebooks/amj.csv
 notebooks/jas.csv
 notebooks/ond.csv
+notebooks/ssr.tif
+notebooks/front.tif
+notebooks/mask.tif
+notebooks/grdir.tif
+notebooks/grad_dir.tif
