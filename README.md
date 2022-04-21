@@ -1,4 +1,7 @@
-# Project Name
+# JUNO
+<div id="top"></div>
+
+## Front Detection Algorithms
 <div id="top"></div>
 
 <!-- PROJECT SHIELDS -->
@@ -23,6 +26,7 @@
 
 **Summary:** Make a summary about your project that impacts the reader. Use a good image/screenshot so the reader recognizes the repo.
 Use the `docs/Documentation.md` to get started.
+
 
 ![Image of Project](/images/logo_atlantic.png)
 
