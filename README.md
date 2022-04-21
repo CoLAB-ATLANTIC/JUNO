@@ -24,8 +24,7 @@
 [website-shield]: https://img.shields.io/badge/-Website-black.svg?style=for-the-badge
 [website-url]: https://colabatlantic.com/
 
-**Summary:** Make a summary about your project that impacts the reader. Use a good image/screenshot so the reader recognizes the repo.
-Use the `docs/Documentation.md` to get started.
+**Summary:** This project, made in partnership with +ATLANTIC CoLAB associate FEUP is a part of the JUNO project and it aims to provide different algorithms implemented in Python for the detection of oceanic fronts and the calculation of Frontal Probabilities on SST (Sea Surface Temperature) images at a given geographical location for a given period.
 
 
 ![Image of Project](/images/logo_atlantic.png)
@@ -58,7 +57,18 @@ Use the `docs/Documentation.md` to get started.
 
 ## About the Project
 
-Print screens, diagrams, ..., (sth that makes the repo recognizable and understandable)
+So far 2 algorithms are available in Python: Canny and BOA whose implementation will allow the user to create a catalog of Frontal Probabilities for a specific period in a certain geographical location, through SST images.
+
+Canny is the most widely used gradient-based algorithm for edge detection in 2D images, having been developed in 1986.Canny comprises several phases: noise reduction, finding the intensity gradient of the image, non-maximum suppression (which converts thick edges into thin ones) and hysteresis thresholding (to decide which edges are really edges and which are not).
+For this project, the OpenCV function .canny() is used, which has as parameters the 8-bit image, the minimum and maximum Threshold for hysteresis, the aperture size of the sobel operator (3x3, 5x5 or 7x7), and the L2gradient (a boolean for calculating the magnitude gradient of the image). For each image (matrix with SST values) a Gaussian filter is applied (because the openCV canny does not apply this filter) and a mask for the definition of the continental zone.
+
+BOA is also a gradient-based algorithm, whose main novelty is the use of a median filter that simultaneously eliminates noise and preserves fronts. It was developed by Belkin and O'Reilly in 2009 and is used for chlorophyll and SST images. The code for the BOA implementation was developed in R by Galuardi.
+
+Talk about the data that it could be used?????????
+
+
+
+
 
 ## Built With
 
@@ -83,8 +93,7 @@ This section should list any major frameworks/libraries used to bootstrap your p
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
+To get a local copy up and running follow these simple steps. You might need a Python version >=3.8
 
 ### Prerequisites
 
@@ -147,7 +156,11 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@your_twitter](https://twitter.com/your_username) - email@example.com
+Luís Figueiredo - luis.leao.figueiredo.23@gmail.com
+
+Nuno Loureiro - 
+
+Renato Mendes - 
 
 Project Link: [https://github.com/your_username/repo_name](https://github.com/your_username/repo_name)
 
