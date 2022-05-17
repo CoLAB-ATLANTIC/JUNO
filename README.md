@@ -57,12 +57,18 @@
 
 ## About the Project
 
-So far 2 algorithms are available in Python: Canny and BOA whose implementation will allow the user to create a catalog of Frontal Probabilities for a specific period in a certain geographical location, through SST images.
+The goal of this repository is to provide different algorithms that allow the detection of fronts and the respective calculation of front probabilities for a given period at a given location.
+
+3 algorithms are available in Python: Canny, BOA and Cayula-Cornillon whose implementation will allow the user to create a catalog of Frontal Probabilities for a specific period in a certain geographical location, through SST images.
 
 Canny is the most widely used gradient-based algorithm for edge detection in 2D images, having been developed in 1986.Canny comprises several phases: noise reduction, finding the intensity gradient of the image, non-maximum suppression (which converts thick edges into thin ones) and hysteresis thresholding (to decide which edges are really edges and which are not).
 For this project, the OpenCV function .canny() is used, which has as parameters the 8-bit image, the minimum and maximum Threshold for hysteresis, the aperture size of the sobel operator (3x3, 5x5 or 7x7), and the L2gradient (a boolean for calculating the magnitude gradient of the image). For each image (matrix with SST values) a Gaussian filter is applied (because the openCV canny does not apply this filter) and a mask for the definition of the continental zone.
 
 BOA is also a gradient-based algorithm, whose main novelty is the use of a median filter that simultaneously eliminates noise and preserves fronts. It was developed by Belkin and O'Reilly in 2009 and is used for chlorophyll and SST images. The code for the BOA implementation was developed in R by Galuardi.
+
+Unlike the 2 previous algorithms the Cayula-Cornillon Algorithm (CCA) uses an histogram approach, being considered the most sophisticated edge detection algorithm in satellite oceanography. The algorithm can be used as a Single Image Edge Detector (SIED) or be applied to several images in order to calculate frontal probability and its basic idea is to use overlapping windows to investigate the statistical likelihood of an edge by 1) calculating the histogram and detect bimodality of the histogram and 2) detecting the cohesiveness of the potential edge. The CCA relies on a combination of methods and it operates at the picture, the window and the local level. The resulting edge is not based on the absolute strenght of the front, but on the relative strenght depending on the context, thus making edge detection temperature scale invariant.
+
+Put links to the specific notebooks?????????
 
 Talk about the data that it could be used?????????
 
@@ -74,18 +80,11 @@ Talk about the data that it could be used?????????
 
 This section should list any major frameworks/libraries used to bootstrap your project. Here are a few examples:
 <p>
-  <a target="_blank"><img alt="Python" src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" /></a>
-  <a target="_blank"><img alt="HTML" src="https://img.shields.io/badge/HTML-239120?style=for-the-badge&logo=html5&logoColor=white" /></a>                           <a target="_blank"><img alt="CSS" src="https://img.shields.io/badge/CSS-239120?&style=for-the-badge&logo=css3&logoColor=white" /></a>                       
-  <a target="_blank"><img alt="Javascript" src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" /></a>        
+  <a target="_blank"><img alt="Python" src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" /></a>     
 </p>
 
 * [Next.js](https://nextjs.org/)
 * [React.js](https://reactjs.org/)
-* [Vue.js](https://vuejs.org/)
-* [Angular](https://angular.io/)
-* [Svelte](https://svelte.dev/)
-* [Laravel](https://laravel.com)
-* [Bootstrap](https://getbootstrap.com)
 * [JQuery](https://jquery.com)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -156,7 +155,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Luís Figueiredo - luis.leao.figueiredo.23@gmail.com
+Luís Figueiredo - Luis.figueiredo@colabatlantic.com
 
 Nuno Loureiro - 
 
