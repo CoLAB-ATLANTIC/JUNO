@@ -158,7 +158,7 @@ Luís Figueiredo - Luis.figueiredo@colabatlantic.com
 
 Nuno Loureiro - 
 
-Renato Mendes - 
+Renato Mendes - renato.mendes@colabatlantic.com
 
 Project Link: [https://github.com/your_username/repo_name](https://github.com/your_username/repo_name)
 
