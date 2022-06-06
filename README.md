@@ -60,12 +60,22 @@ The goal of this repository is to provide different algorithms that allow the de
 
 3 algorithms are available in Python: Canny, BOA and Cayula-Cornillon whose implementation will allow the user to create a catalog/map of Frontal Probabilities for a specific period in a certain geographical location, through SST images.
 
+### Canny Algorithm
+
 Canny is the most widely used gradient-based algorithm for edge detection in 2D images, having been developed in 1986.Canny comprises several phases: noise reduction, finding the intensity gradient of the image, non-maximum suppression (which converts thick edges into thin ones) and hysteresis thresholding (to decide which edges are really edges and which are not).
 For this project, the OpenCV function .canny() is used, which has as parameters the 8-bit image, the minimum and maximum Threshold for hysteresis, the aperture size of the sobel operator (3x3, 5x5 or 7x7), and the L2gradient (a boolean for calculating the magnitude gradient of the image). For each image (matrix with SST values) a Gaussian filter is applied (because the openCV canny does not apply this filter) and a mask for the definition of the continental zone.
 
+### Belkin-O'Reilly Algorithm (BOA)
+
 BOA is also a gradient-based algorithm, whose main novelty is the use of a median filter that simultaneously eliminates noise and preserves fronts. It was developed by Belkin and O'Reilly in 2009 and is used for chlorophyll and SST images. The code for the BOA implementation was developed in R by Galuardi.
 
+### Cayula-Cornillon Algorithm (CCA)
+
 Unlike the 2 previous algorithms the Cayula-Cornillon Algorithm (CCA) uses an histogram approach, being considered the most sophisticated edge detection algorithm in satellite oceanography. The algorithm can be used as a Single Image Edge Detector (SIED) or be applied to several images in order to calculate frontal probability. Its basic idea is to use overlapping windows to investigate the statistical likelihood of an edge by 1) calculating the histogram and detect bimodality of the histogram and 2) detecting the cohesiveness of the potential edge. The CCA relies on a combination of methods and it operates at the picture, the window and the local level. The resulting edge is not based on the absolute strenght of the front, but on the relative strenght depending on the context, thus making edge detection temperature scale invariant.
+
+[CCA frontal probabilities notebook](notebooks/CayulaCornillon_frontal_prob.ipynb)
+
+
 
 
 
@@ -148,10 +158,8 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 Luís Figueiredo - Luis.figueiredo@colabatlantic.com
 
-Nuno Loureiro - 
+Nuno Loureiro - Nuno.loureiro@colabatlantic.com
 
 Renato Mendes - renato.mendes@colabatlantic.com
-
-Project Link: [https://github.com/your_username/repo_name](https://github.com/your_username/repo_name)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
