@@ -65,9 +65,13 @@ The goal of this repository is to provide different algorithms that allow the de
 Canny is the most widely used gradient-based algorithm for edge detection in 2D images, having been developed in 1986.Canny comprises several phases: noise reduction, finding the intensity gradient of the image, non-maximum suppression (which converts thick edges into thin ones) and hysteresis thresholding (to decide which edges are really edges and which are not).
 For this project, the OpenCV function .canny() is used, which has as parameters the 8-bit image, the minimum and maximum Threshold for hysteresis, the aperture size of the sobel operator (3x3, 5x5 or 7x7), and the L2gradient (a boolean for calculating the magnitude gradient of the image). For each image (matrix with SST values) a Gaussian filter is applied (because the openCV canny does not apply this filter) and a mask for the definition of the continental zone.
 
+[Canny frontal probabilities notebook](notebooks/canny_frontal_prob.ipynb)
+
 ### Belkin-O'Reilly Algorithm (BOA)
 
 BOA is also a gradient-based algorithm, whose main novelty is the use of a median filter that simultaneously eliminates noise and preserves fronts. It was developed by Belkin and O'Reilly in 2009 and is used for chlorophyll and SST images. The code for the BOA implementation was developed in R by Galuardi.
+
+[BOA frontal probabilities notebook](notebooks/BOA_frontal_prob.ipynb)
 
 ### Cayula-Cornillon Algorithm (CCA)
 
