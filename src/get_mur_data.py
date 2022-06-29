@@ -2,19 +2,14 @@
 
 import os
 import wget
-import threading
 import numpy as np
 import pandas as pd
 from math import floor
 from pydap.client import open_url
 from tqdm import tqdm
 import sys
-import netCDF4 as nc
-import matplotlib.pyplot as plt
 import xarray as xr
-import cv2
-import matplotlib
-from matplotlib.colors import ListedColormap
+
 
 ##################################### FUNCTIONS TO DOWNLOAD MUR DATA ###########################################
 def boundingindex(dmin, dint, boundary0, boundary1):
@@ -90,7 +85,7 @@ def download_sst_thread(data_range, sst_path, mur_j0, mur_j1, mur_i0, mur_i1, re
 #######################################################################################################
 
 
-def donwload_mur(years=10, from_start_date = '0601', to_end_date='0831', merge_files_txt='summer_10years'):
+def download_mur(years=10, from_start_date = '0601', to_end_date='0831', merge_files_txt='summer_10years'):
     
     """
     O objectivo desta função é fazer o download dos dados do MUR para um certo periodo (por exempolo no nosso caso queremos os Verões dos ultimos 10 anos, 
@@ -120,4 +115,4 @@ def donwload_mur(years=10, from_start_date = '0601', to_end_date='0831', merge_f
         os.remove(f)
         
         
-donwload_mur(years=10, from_start_date = '0601', to_end_date='0831', merge_files_txt='summer_10years')      
+download_mur(years=10, from_start_date = '0601', to_end_date='0831', merge_files_txt='summer_10years')      
