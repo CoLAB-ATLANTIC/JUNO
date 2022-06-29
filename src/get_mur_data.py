@@ -9,6 +9,7 @@ from pydap.client import open_url
 from tqdm import tqdm
 import sys
 import xarray as xr
+from datetime import date, timedelta
 
 
 ##################################### FUNCTIONS TO DOWNLOAD MUR DATA ###########################################
