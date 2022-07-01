@@ -4,21 +4,13 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import netCDF4 as nc
 import xarray as xr
 import os
-from pathlib import Path
-from numpy import nanmedian
-import scipy
-import scipy.signal
-import math
-from numpy.fft import fft2
 import cv2
 import matplotlib
 from matplotlib.colors import ListedColormap
 from scipy.ndimage import gaussian_filter
-
-import BOA     ###### ?????????????????????????????????
+import BOA     
 import CayulaCornillon
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
@@ -361,7 +353,7 @@ def main():
     #specificday_mur -> array with all the days of the period in question
     
     
-    canny_frontal_prob_visualization(period=specificday_mur, dict_df=dict_df_mur, Tmin=200, Tmax=300, sigma=5, apertureSize=5, vmax=30, period_txt=period_txt)
+    canny_frontal_prob_visualization(period=specificday_mur, dict_df=dict_df_mur, period_txt=period_txt, Tmin=200, Tmax=300, sigma=5, apertureSize=5, vmax=30)
     
     boa_frontal_prob_visualization(period=specificday_mur, df = dict_df_mur, threshold=0.05, vmin=None, vmax=None, period_txt=period_txt)
     

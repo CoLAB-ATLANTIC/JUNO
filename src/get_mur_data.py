@@ -9,6 +9,8 @@ from pydap.client import open_url
 from tqdm import tqdm
 import sys
 import xarray as xr
+from datetime import date
+import glob
 
 
 ##################################### FUNCTIONS TO DOWNLOAD MUR DATA ###########################################
@@ -115,4 +117,5 @@ def download_mur(years=10, from_start_date = '0601', to_end_date='0831', merge_f
         os.remove(f)
         
         
-download_mur(years=10, from_start_date = '0601', to_end_date='0831', merge_files_txt='summer_10years')      
+#download_mur(years=0, from_start_date = '0601', to_end_date='0603', merge_files_txt='june3days')      
+download_mur(years=10, from_start_date = '0601', to_end_date='0831', merge_files_txt='summer_10years')   
