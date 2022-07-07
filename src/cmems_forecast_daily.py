@@ -126,7 +126,7 @@ def canny_front_detection_1day(df, day_txt, base_path, thresh_min=120, thresh_ma
     
     plt.figure()
     plt.imshow(canny_mask, cmap=newcmp, extent=[lon[0], lon[-1], lat[0], lat[-1]])
-    plt.title("Canny Algorithm (CMEMS Forecast) " + day_txt, fontsize=25)
+    plt.title("Canny Algorithm (CMEMS Forecast) " + day_txt, fontsize=12)
     plt.savefig(os.path.join(base_path,'data/CMEMS_forecast_daily_images/Canny_' + day_txt +'.jpg'))
 
 
@@ -165,7 +165,7 @@ def BOA_aplication(df, day_txt, base_path):
     #limits of x and y axis for the MUR data
     plt.xlim([-18.95, -5])
     plt.ylim([35.05, 45])
-    plt.title("BOA (CMEMS Forecast) " + day_txt, fontsize=20)
+    plt.title("BOA (CMEMS Forecast) " + day_txt, fontsize=12)
     plt.savefig(os.path.join(base_path,'data/CMEMS_forecast_daily_images/BOA_' + day_txt +'.jpg'))
     
     
@@ -228,7 +228,7 @@ def CCA_front(df, day_txt, base_path):
     
     plt.imshow(front, cmap=newcmp, extent = [lon[0], lon[-1], lat[0], lat[-1]])    #interpolation='nearest'
     #extent is to define the extention of the x and y axis
-    plt.title("Cayula-Cornillon Algorithm (CMEMS Forecast) " + day_txt, fontsize=20)
+    plt.title("Cayula-Cornillon Algorithm (CMEMS Forecast) " + day_txt, fontsize=12)
     plt.savefig(os.path.join(base_path,'data/CMEMS_forecast_daily_images/CCA_' + day_txt +'.jpg'))
     plt.close()
     
@@ -253,16 +253,19 @@ def real_sst_image(df, day_txt, base_path):
     
     plt.figure()
     plt.imshow(sst, cmocean.cm.thermal, extent = [lon[0], lon[-1], lat[0], lat[-1]])
-    plt.title("Real SST Image (CMEMS Forecast) " + day_txt, fontsize=20)
+    plt.title("Real SST Image (CMEMS Forecast) " + day_txt, fontsize=12)
     plt.savefig(os.path.join(base_path,'data/CMEMS_forecast_daily_images/RealSST_' + day_txt+'.jpg'))
     
     
 
 def main():
     
-    #Eu não quero que o programa me peça estes dados todos os dias, portanto vou guarda-los e reutilizar para os dias todos
-    USERNAME = input('Enter your username: ')   
-    PASSWORD = getpass.getpass('Enter your password: ')
+    #My Username and Password are stored in a .txt file stored in a data folder which belong to the gitignore
+    with open('JUNO/data/copernicus_login.txt') as f:
+        lines = f.readlines()
+        
+    USERNAME = lines[0][1:-1]
+    PASSWORD = lines[1][:-1]
 
 
     #Get the data in the format we want: data always at 12:30
