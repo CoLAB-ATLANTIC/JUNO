@@ -1,20 +1,16 @@
-#Import libraries
 
 import os
-import wget
 import numpy as np
 import pandas as pd
+import wget
 from math import floor
 from pydap.client import open_url
 from tqdm import tqdm
 import sys
 import xarray as xr
-<<<<<<< HEAD
 from datetime import date
 import glob
-=======
-from datetime import date, timedelta
->>>>>>> c7974266c2eccd520f92a6512a674ab35f8a4352
+
 
 
 ##################################### FUNCTIONS TO DOWNLOAD MUR DATA ###########################################
