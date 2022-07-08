@@ -17,6 +17,10 @@ from matplotlib.colors import ListedColormap
 from scipy.ndimage import gaussian_filter
 from datetime import date, timedelta
 import wget
+import sys
+from math import floor
+from tqdm import tqdm
+from pydap.client import open_url
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
@@ -116,7 +120,6 @@ def get_data(data, base_path):
     data_folder = os.path.join(base_path, "data/MUR_daily_data")           
     
     nc_path = os.path.join(data_folder, data)
-    ds = nc.Dataset(nc_path)
     netCDF = xr.load_dataset(nc_path)
     
     df = netCDF.to_dataframe()
@@ -223,8 +226,6 @@ def BOA_aplication(df, day_txt, base_path):
 
 
 
-
-
 ################################## CAYULA-CORNILLON ALGORITHM #################################################################
     
 
@@ -290,6 +291,10 @@ def CCA_front(df, day_txt, base_path):
     plt.savefig(os.path.join(base_path,'data/MUR_algorithm_daily_images/CCA_' + day_txt +'.jpg'))
     plt.close()
     
+    ##########################################################################################################################################
+    
+    ################################# GET THE REAL SST IMAGE FROM THE CMEMS FORECAST DATASET ##############################################
+    
     
 def real_sst_image(df, day_txt, base_path):
         
@@ -314,23 +319,36 @@ def real_sst_image(df, day_txt, base_path):
 
 def main():
     
-    base_path = '/home/luisfigueiredo/JUNO'
+    base_path = os.getcwd()
+    base_path = os.path.join(base_path, 'JUNO')
     
-    for day in range(2, 10):
-        day_txt = (date.today() - timedelta(days=day)).strftime('%Y%m%d')
-
-        download_sst(path = "/home/luisfigueiredo/JUNO/data/MUR_daily_data/", date = pd.to_datetime(day_txt), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
-    
-        df_yesterday_mur = get_data('sst_' + day_txt + '.nc', base_path=base_path)
-    
-        canny_front_detection_1day(df_yesterday_mur, day_txt, base_path=base_path)
-    
-        BOA_aplication(df_yesterday_mur, day_txt, base_path=base_path)
-    
-        CCA_front(df_yesterday_mur, day_txt, base_path=base_path)
+    #Quando criar o cronjob para correr este script diariamente, este for desaparece e day passa a ser 1 (yesterday)
+    #for day in range(2, 4):
+    day_txt = (date.today() - timedelta(days=1)).strftime('%Y%m%d')
         
-        real_sst_image(df_yesterday_mur, day_txt, base_path=base_path)
+    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data'))
+    if not exist_path:
+        os.makedirs(os.path.join(base_path, 'data/MUR_daily_data'))
+
+    download_sst(path = os.path.join(base_path, 'data/MUR_daily_data/'), date = pd.to_datetime(day_txt), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
+    
+    
+    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_algorithm_daily_images'))
+    if not exist_path:
+        os.makedirs(os.path.join(base_path, 'data/MUR_algorithm_daily_images'))
+            
+    
+    df_yesterday_mur = get_data('sst_' + day_txt + '.nc', base_path=base_path)
+    
+    canny_front_detection_1day(df_yesterday_mur, day_txt, base_path=base_path)
+    
+    BOA_aplication(df_yesterday_mur, day_txt, base_path=base_path)
+    
+    CCA_front(df_yesterday_mur, day_txt, base_path=base_path)
+        
+    real_sst_image(df_yesterday_mur, day_txt, base_path=base_path)
     
 
 if __name__ == "__main__":
     main()
+
