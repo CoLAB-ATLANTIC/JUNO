@@ -19,15 +19,15 @@ matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object ha
 
 ######################################### IMPORT DATA #######################################################
 
-def get_data(data):
+def get_data(base_path, data):
     
     """
     Function to get our netCDF file that is stored in the data directory inside the MUR_seasonal_data folder and convert it to a dataframe.
     The data parameter is the string name of the netCDF file we want to import
     """
     
-    current_path = os.getcwd()
-    data_folder = os.path.join(current_path,"./data/MUR_seasonal_data")
+    base_path = base_path
+    data_folder = os.path.join(base_path, "data/MUR_seasonal_data")  
     
     nc_path = os.path.join(data_folder, data)
     #ds = nc.Dataset(nc_path)
@@ -124,7 +124,7 @@ def frontal_prob(period, dict_df, Tmin, Tmax, sigma=5, apertureSize=5):
     return fp 
 
 
-def canny_frontal_prob_visualization(period, dict_df, period_txt, Tmin, Tmax, sigma=5, apertureSize=5, vmin=None, vmax=None):
+def canny_frontal_prob_visualization(base_path, period, dict_df, period_txt, Tmin, Tmax, sigma=5, apertureSize=5, vmin=None, vmax=None):
     
     """
     Function to visualize the map of frontal probability.
@@ -149,7 +149,7 @@ def canny_frontal_prob_visualization(period, dict_df, period_txt, Tmin, Tmax, si
     plt.imshow(fp, cmap=newcmp, vmin=vmin, vmax=vmax, extent=[lon[0], lon[-1], lat[0], lat[-1]]) 
     plt.colorbar(orientation='horizontal', fraction=0.025, pad=0.08, aspect=50)
     plt.title("CANNY Frontal Probabilities (MUR) " + period_txt, fontsize=20)
-    plt.savefig('./data/MUR_algorithm_images/CANNY_frontal_prob_' + period_txt +'.jpg')
+    plt.savefig(os.path.join(base_path, 'data/MUR_seasonal_images/CANNY_frontal_prob_' + period_txt +'.jpg'))
 
 
 
@@ -197,7 +197,7 @@ def frontal_prob_boa(period, df, threshold=0.05):
     return fp
 
 
-def boa_frontal_prob_visualization(period, df, period_txt, threshold=0.05, vmin=None, vmax=None):
+def boa_frontal_prob_visualization(base_path, period, df, period_txt, threshold=0.05, vmin=None, vmax=None):
     
     """
     Function to visualize the frontal probabilities map.
@@ -224,7 +224,7 @@ def boa_frontal_prob_visualization(period, df, period_txt, threshold=0.05, vmin=
     plt.ylim([35.05, 45])
     plt.colorbar(orientation='horizontal', fraction=0.025, pad=0.08, aspect=50)
     plt.title("BOA Frontal Probabilities (MUR) " + period_txt, fontsize=20)
-    plt.savefig('./data/MUR_algorithm_images/BOA_frontal_prob_' + period_txt +'.jpg')
+    plt.savefig(os.path.join(base_path, 'data/MUR_seasonal_images/BOA_frontal_prob_' + period_txt +'.jpg'))
 
     
 
@@ -306,7 +306,7 @@ def frontal_prob(period, dict_df):
     return front_prob
     
     
-def CCA_frontal_prob_visualization(period, dict_df, period_txt, vmax=None):   
+def CCA_frontal_prob_visualization(base_path, period, dict_df, period_txt, vmax=None):   
     
     """
     The purpose of this function is to load the memory from different front matrixes for different days,
@@ -334,7 +334,7 @@ def CCA_frontal_prob_visualization(period, dict_df, period_txt, vmax=None):
     #extent is to define the extention of the x and y axis
     plt.title("Cayula-Cornillon Algorithm Frontal Probability (MUR) " + period_txt, fontsize=20)
     plt.colorbar(orientation='horizontal', fraction=0.025, pad=0.08, aspect=50)
-    plt.savefig('./data/MUR_algorithm_images/CCA_frontal_prob_' + period_txt +'.jpg')
+    plt.savefig(os.path.join(base_path, 'data/MUR_seasonal_images/CCA_frontal_prob_' + period_txt +'.jpg'))
     
 
 ############################################################################################################################################################    
@@ -342,15 +342,22 @@ def CCA_frontal_prob_visualization(period, dict_df, period_txt, vmax=None):
     
 def main():
     
+    base_path = os.getcwd()
+    base_path = os.path.join(base_path, 'JUNO')
+    
     period_txt = input("Type name of the period for which we are applying the algorithms: ")
     
     data_txt = input("Type name of the netCDF file from the MUR_seasonal_data folder you want to import: ")
     
-    df_mur = get_data(data_txt)    #neste caso data vai ser o nome do netcdf file que queremos importar (guardado no directorio MUR_seasonal_data)
+    df_mur = get_data(base_path=base_path, data = data_txt)    #neste caso data vai ser o nome do netcdf file que queremos importar (guardado no directorio MUR_seasonal_data)
     
     dict_df_mur, specificday_mur = get_period(df_mur)
     #dict_df_mur -> dictionaire of dataframes for each day of the period in question
     #specificday_mur -> array with all the days of the period in question
+    
+    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_seasonal_images'))
+    if not exist_path:
+        os.makedirs(os.path.join(base_path, 'data/MUR_seasonal_images'))
     
     
     canny_frontal_prob_visualization(period=specificday_mur, dict_df=dict_df_mur, period_txt=period_txt, Tmin=200, Tmax=300, sigma=5, apertureSize=5, vmax=30)

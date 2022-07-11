@@ -326,16 +326,16 @@ def main():
     #for day in range(2, 4):
     day_txt = (date.today() - timedelta(days=1)).strftime('%Y%m%d')
         
-    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data'))
-    if not exist_path:
-        os.makedirs(os.path.join(base_path, 'data/MUR_daily_data'))
+    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data'))   #check if folder MUR_dailyu_data exists in data folder
+    if not exist_path:                                                            #if it don't exist:
+        os.makedirs(os.path.join(base_path, 'data/MUR_daily_data'))               #create the folder
 
     download_sst(path = os.path.join(base_path, 'data/MUR_daily_data/'), date = pd.to_datetime(day_txt), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
     
     
-    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_algorithm_daily_images'))
-    if not exist_path:
-        os.makedirs(os.path.join(base_path, 'data/MUR_algorithm_daily_images'))
+    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_algorithm_daily_images'))    #check if folder MUR_algorithm_daily_images exists in data folder
+    if not exist_path:                                                                         #if doesn't exist
+        os.makedirs(os.path.join(base_path, 'data/MUR_algorithm_daily_images'))                # create the folder
             
     
     df_yesterday_mur = get_data('sst_' + day_txt + '.nc', base_path=base_path)

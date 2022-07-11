@@ -1,4 +1,4 @@
-import getpass
+
 import motuclient
 from datetime import date, timedelta
 import numpy as np
@@ -261,7 +261,7 @@ def real_sst_image(df, day_txt, base_path):
 def main():
     
     #My Username and Password are stored in a .txt file stored in a data folder which belong to the gitignore
-    with open('JUNO/data/copernicus_login.txt') as f:
+    with open('JUNO/data/copernicus_login.txt') as f:   #quando fizer clone para o servidor esta documento .txt vai ser ignorado
         lines = f.readlines()
         
     USERNAME = lines[0][1:-1]
@@ -293,11 +293,16 @@ def main():
 
     #Submit data request
     motuclient.motu_api.execute_request(MotuOptions(data_request_options_dict_automated))
-    
-    base_path = '/home/luisfigueiredo/JUNO'
+
+    base_path = os.getcwd()
+    base_path = os.path.join(base_path, 'JUNO')
     
     #Quando criar o cronjob para correr este script diariamente, este for desaparece e day passa a ser 1 (yesterday)
-    #day_txt = (date.today() - timedelta(days=day)).strftime('%Y%m%d')
+    day_txt = (date.today() - timedelta(days=2)).strftime('%Y-%m-%d')
+    
+    exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_forecast_daily_images'))
+    if not exist_path:
+        os.makedirs(os.path.join(base_path, 'data/CMEMS_forecast_daily_images'))
   
     df_cmems_forecast = get_data('CMEMS_forecast_' + day_txt + '.nc', base_path=base_path)
     
