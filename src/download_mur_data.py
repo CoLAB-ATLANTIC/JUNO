@@ -126,8 +126,8 @@ def main():
         os.makedirs(os.path.join(base_path, 'data/MUR_seasonal_data'))                #create the folder
     
     
-    download_mur(base_path=base_path, years=0, from_start_date = '0601', to_end_date='0603', merge_files_txt='june3days')      
-    #download_mur(years=10, from_start_date = '0601', to_end_date='0831', merge_files_txt='summer_10years')   
+    #download_mur(base_path=base_path, years=0, from_start_date = '0601', to_end_date='0603', merge_files_txt='june3days')      
+    download_mur(years=10, from_start_date = '0601', to_end_date='0831', merge_files_txt='summer_10years')   
     
     
 
