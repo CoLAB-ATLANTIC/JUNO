@@ -7,7 +7,6 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import netCDF4 as nc
 import xarray as xr
 import os
 import cmocean
@@ -324,7 +323,7 @@ def main():
     
     #Quando criar o cronjob para correr este script diariamente, este for desaparece e day passa a ser 1 (yesterday)
     #for day in range(2, 4):
-    day_txt = (date.today() - timedelta(days=1)).strftime('%Y%m%d')
+    day_txt = (date.today() - timedelta(days=2)).strftime('%Y%m%d')
         
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data'))   #check if folder MUR_dailyu_data exists in data folder
     if not exist_path:                                                            #if it don't exist:
