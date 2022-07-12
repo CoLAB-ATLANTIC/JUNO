@@ -39,9 +39,9 @@ def get_data(base_path, data):
     df = df.drop(['depth'], axis=1, errors='ignore') #drop the column 'depth' if exists: only exists in reanalysis
     
     #if we are importing MUR data, rename columns and convert temperature to Celsius
-    if data.startswith('mur'):
-        df.rename(columns={'lat': 'latitude', 'lon': 'longitude', 'time': 'time', 'analysed_sst':'thetao'}, inplace=True)
-        df['thetao'] = df['thetao']-273.15   
+    #if data.startswith('mur'):
+    df.rename(columns={'lat': 'latitude', 'lon': 'longitude', 'time': 'time', 'analysed_sst':'thetao'}, inplace=True)
+    df['thetao'] = df['thetao']-273.15   
     
     return df
 
@@ -96,7 +96,7 @@ def canny_front_calc(dict_df, Tmin, Tmax, sigma=5, apertureSize=5):
     return canny  #return the matrix (if a pixel was considered a front than its value is 255; otherwise is 0)
 
 
-def frontal_prob(period, dict_df, Tmin, Tmax, sigma=5, apertureSize=5):
+def frontal_prob_canny(period, dict_df, Tmin, Tmax, sigma=5, apertureSize=5):
     """
     This function receives several front matrices and for that period calculates the frontal_probability. 
     Then it creates a masked_array so that the continental zone is well defined.
@@ -132,7 +132,7 @@ def canny_frontal_prob_visualization(base_path, period, dict_df, period_txt, Tmi
     """
     
     #first we apply the frontal_prob function to a certain period of data
-    fp = frontal_prob(period=period, dict_df=dict_df, Tmin=Tmin, Tmax=Tmax, sigma=sigma, apertureSize=apertureSize)
+    fp = frontal_prob_canny(period=period, dict_df=dict_df, Tmin=Tmin, Tmax=Tmax, sigma=sigma, apertureSize=apertureSize)
     
     #for the definition of the extent in the imshow() -> so we see the values of long and latitude in our plot
     lat = np.array(dict_df[period[0]]['latitude'].unique())
@@ -146,6 +146,7 @@ def canny_frontal_prob_visualization(base_path, period, dict_df, period_txt, Tmi
     newcmp = ListedColormap(newcolor)
     newcmp.set_bad(color='gray')
 
+    plt.figure()
     plt.imshow(fp, cmap=newcmp, vmin=vmin, vmax=vmax, extent=[lon[0], lon[-1], lat[0], lat[-1]]) 
     plt.colorbar(orientation='horizontal', fraction=0.025, pad=0.08, aspect=50)
     plt.title("CANNY Frontal Probabilities (MUR) " + period_txt, fontsize=20)
@@ -217,7 +218,7 @@ def boa_frontal_prob_visualization(base_path, period, df, period_txt, threshold=
     newcmp = ListedColormap(newcolor)
     newcmp.set_bad(color='gray')
     
-    
+    plt.figure()
     plt.imshow(fp, cmap=newcmp, vmin=vmin, vmax=vmax, extent=[lon[0], lon[-1], lat[0], lat[-1]], interpolation='gaussian')
     #extent is to define the extension of x and y axis in image
     plt.xlim([-18.95, -5])
@@ -274,7 +275,7 @@ def front_calc(df):
     return front    
 
 
-def frontal_prob(period, dict_df):
+def frontal_prob_cca(period, dict_df):
     
     """
     Function that allows the visualization of the Frontal Probabilities for the Cayula-Cornillon Algorithm (CCA).
@@ -314,7 +315,7 @@ def CCA_frontal_prob_visualization(base_path, period, dict_df, period_txt, vmax=
     and make a visual demonstration of this matrix.
     """
     
-    front_prob = frontal_prob(period, dict_df)
+    front_prob = frontal_prob_cca(period, dict_df)
        
     lat = np.array(dict_df[period[0]]['latitude'].unique())
     lon = np.array(dict_df[period[0]]['longitude'].unique())
@@ -329,7 +330,7 @@ def CCA_frontal_prob_visualization(base_path, period, dict_df, period_txt, vmax=
     newcmp = ListedColormap(newcolor)
     newcmp.set_bad(color='gray')
 
-    
+    plt.figure()
     plt.imshow(front_prob, cmap=newcmp, extent = [lon[0], lon[-1], lat[0], lat[-1]], interpolation='bilinear', vmax=vmax)    
     #extent is to define the extention of the x and y axis
     plt.title("Cayula-Cornillon Algorithm Frontal Probability (MUR) " + period_txt, fontsize=20)
@@ -359,12 +360,12 @@ def main():
     if not exist_path:
         os.makedirs(os.path.join(base_path, 'data/MUR_seasonal_images'))
     
+
+    canny_frontal_prob_visualization(base_path=base_path, period=specificday_mur, dict_df=dict_df_mur, period_txt=period_txt, Tmin=200, Tmax=300, sigma=5, apertureSize=5, vmax=30)
     
-    canny_frontal_prob_visualization(period=specificday_mur, dict_df=dict_df_mur, period_txt=period_txt, Tmin=200, Tmax=300, sigma=5, apertureSize=5, vmax=30)
+    boa_frontal_prob_visualization(base_path=base_path, period=specificday_mur, df = dict_df_mur, threshold=0.05, vmin=None, vmax=None, period_txt=period_txt)
     
-    boa_frontal_prob_visualization(period=specificday_mur, df = dict_df_mur, threshold=0.05, vmin=None, vmax=None, period_txt=period_txt)
-    
-    CCA_frontal_prob_visualization(period = specificday_mur, dict_df=dict_df_mur, period_txt=period_txt)
+    CCA_frontal_prob_visualization(base_path=base_path, period = specificday_mur, dict_df=dict_df_mur, period_txt=period_txt)
     
 
 if __name__ == "__main__":
