@@ -260,6 +260,9 @@ def real_sst_image(df, day_txt, base_path):
 
 def main():
     
+    base_path = os.getcwd()
+    base_path = os.path.join(base_path, 'JUNO')
+    
     #My Username and Password are stored in a .txt file stored in a data folder which belong to the gitignore
     with open('JUNO/data/copernicus_login.txt') as f:   #quando fizer clone para o servidor esta documento .txt vai ser ignorado
         lines = f.readlines()
