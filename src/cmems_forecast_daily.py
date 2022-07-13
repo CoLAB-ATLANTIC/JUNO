@@ -266,6 +266,10 @@ def main():
         
     USERNAME = lines[0][1:-1]
     PASSWORD = lines[1][:-1]
+    
+    exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_forecast_daily_data'))
+    if not exist_path:
+        os.makedirs(os.path.join(base_path, 'data/CMEMS_forecast_daily_data'))
 
 
     #Get the data in the format we want: data always at 12:30
