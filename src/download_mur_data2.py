@@ -86,7 +86,7 @@ def download_sst_thread(data_range, sst_path, mur_j0, mur_j1, mur_i0, mur_i1, re
 #######################################################################################################
 
 
-def download_mur(base_path, years=10, from_start_date = '0601', to_end_date='0831', merge_files_txt='summer_10years'):
+def download_mur(base_path, years=10, from_start_date = '0601', to_end_date='0831', period_txt='summer'):
     
     """
     O objectivo desta função é fazer o download dos dados do MUR para um certo periodo (por exempolo no nosso caso queremos os Verões dos ultimos 10 anos, 
@@ -105,6 +105,12 @@ def download_mur(base_path, years=10, from_start_date = '0601', to_end_date='083
     for j in range(0, len(start)):
         download_sst_thread(data_range = pd.date_range(start=pd.to_datetime(start[j]), end=pd.to_datetime(end[j])), sst_path=os.path.join(base_path, 'data/MUR_seasonal_data/'), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
         
+        #Merge netCDF files (summer of last 10 years)
+        ds = xr.open_mfdataset(os.path.join(base_path, 'data/MUR_seasonal_data/sst' + start[j][:4] + '*.nc'), combine = 'nested', concat_dim="time")
+        ds.to_netcdf(os.path.join(base_path, 'data/MUR_seasonal_data/sst_') + period_txt + start[j][:4] +'.nc')
+        
+
+        
         
 def main():
     
@@ -116,8 +122,8 @@ def main():
         os.makedirs(os.path.join(base_path, 'data/MUR_seasonal_data'))                #create the folder
     
     
-    #download_mur(base_path=base_path, years=0, from_start_date = '0601', to_end_date='0603', merge_files_txt='june3days')      
-    download_mur(base_path=base_path, years=10, from_start_date = '0601', to_end_date='0831', merge_files_txt='summer_10years')   
+    #download_mur(base_path=base_path, years=0, from_start_date = '0601', to_end_date='0603')      
+    download_mur(base_path=base_path, years=10, from_start_date = '0601', to_end_date='0831', period_txt='summer')   
     
     
 
