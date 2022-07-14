@@ -128,7 +128,7 @@ def main():
     
     
     #download_mur(base_path=base_path, years=0, from_start_date = '0601', to_end_date='0603')      
-    download_mur(base_path=base_path, years=2, from_start_date = '0601', to_end_date='0610', period_txt='summer')   
+    download_mur(base_path=base_path, years=10, from_start_date = '0601', to_end_date='0831', period_txt='summer')   
     
     
 
