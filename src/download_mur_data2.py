@@ -108,11 +108,11 @@ def download_mur(base_path, years=10, from_start_date = '0601', to_end_date='083
         for k in range(0, len(start)):
         #Merge netCDF files (summer of last 10 years)
             ds = xr.open_mfdataset(os.path.join(base_path, 'data/MUR_seasonal_data/sst_' + start[k][:4] + '*' + '.nc'), combine = 'nested', concat_dim="time")
-            ds.to_netcdf(os.path.join(base_path, 'data/MUR_seasonal_data/sst_') + period_txt + start[k][:4] +'.nc')
+            ds.to_netcdf(os.path.join(base_path, 'data/MUR_seasonal_data/sst.') + period_txt + start[k][:4] +'.nc')
             
     
         # depois deveria apagar os ficheiros netCDF individuais que começam por sst e acabam em .nc
-    for f in glob.glob(os.path.join(base_path, 'data/MUR_seasonal_data/sst_2*.nc')):
+    for f in glob.glob(os.path.join(base_path, 'data/MUR_seasonal_data/sst_*.nc')):
         os.remove(f)        
 
         
