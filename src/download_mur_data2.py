@@ -98,7 +98,7 @@ def download_mur(base_path, years=10, from_start_date = '0601', to_end_date='083
     end = []
 
     #Create 2 list with the start and end of summer dates for the last 10 years (2011 to 2021)
-    for i in range(1, years+2):        #range começa em 1 para ignorarmos 2022 e vai até years+2 (neste caso 2011)
+    for i in range(1, years+1):        #range começa em 1 para ignorarmos 2022 e vai até years+2 (neste caso 2011)
         start.append(str((date.today().year-i)) + from_start_date)    # from_start_date='0601' -> começa a 1 de junho
         end.append(str((date.today().year-i)) + to_end_date)          # 'to_end_date = 0831' -> termina a 31 de Agosto
 
@@ -107,9 +107,13 @@ def download_mur(base_path, years=10, from_start_date = '0601', to_end_date='083
         
         for k in range(0, len(start)):
         #Merge netCDF files (summer of last 10 years)
-            ds = xr.open_mfdataset(os.path.join(base_path, 'data/MUR_seasonal_data/sst' + start[k][:4] + '*.nc'), combine = 'nested', concat_dim="time")
+            ds = xr.open_mfdataset(os.path.join(base_path, 'data/MUR_seasonal_data/sst_' + start[k][:4] + '*' + '.nc'), combine = 'nested', concat_dim="time")
             ds.to_netcdf(os.path.join(base_path, 'data/MUR_seasonal_data/sst_') + period_txt + start[k][:4] +'.nc')
-        
+            
+    
+        # depois deveria apagar os ficheiros netCDF individuais que começam por sst e acabam em .nc
+    for f in glob.glob(os.path.join(base_path, 'data/MUR_seasonal_data/sst_2*.nc')):
+        os.remove(f)        
 
         
         
