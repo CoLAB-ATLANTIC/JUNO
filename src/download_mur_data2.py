@@ -124,10 +124,10 @@ def main():
     
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_seasonal_data'))   #check if folder MUR_seasonal_data exists in data folder
     if not exist_path:                                                               #if it don't exist:
-        os.makedirs(os.path.join(base_path, 'data/MUR_seasonal_data'))                #create the folder
+        os.makedirs(os.path.join(base_path, 'data/MUR_seasonal_data'))               #create the folder
     
     
-    #download_mur(base_path=base_path, years=0, from_start_date = '0601', to_end_date='0603')      
+    #download_mur(base_path=base_path, years=2, from_start_date = '0601', to_end_date='0604')      
     download_mur(base_path=base_path, years=10, from_start_date = '0601', to_end_date='0831', period_txt='summer')   
     
     

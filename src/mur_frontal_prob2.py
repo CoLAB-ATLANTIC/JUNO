@@ -112,7 +112,7 @@ def frontal_prob_canny(period, dict_df, Tmin, Tmax, sigma=5, apertureSize=5):
     return fp 
 
 
-def canny_frontal_prob_visualization(base_path, period_txt, period, dict_df, fp_canny=fp_canny, vmin=None, vmax=None):
+def canny_frontal_prob_visualization(base_path, period_txt, period, dict_df, fp_canny, vmin=None, vmax=None):
     
     """
     Function to visualize the map of frontal probability.
@@ -348,7 +348,7 @@ def main():
     fp_cca = np.zeros((1001, 1401))
     count=0
     
-    for filename in os.listdir(os.path.exists(os.path.join(base_path, 'data/MUR_seasonal_images'))):
+    for filename in os.listdir((os.path.join(base_path, 'data/MUR_seasonal_data'))):
         
         df_mur = get_data(base_path=base_path, data = filename)    #neste caso data vai ser o nome do netcdf file que queremos importar (guardado no directorio MUR_seasonal_data)
         dict_df_mur, specificday_mur = get_period(df_mur)
