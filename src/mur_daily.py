@@ -319,7 +319,8 @@ def real_sst_image(df, day_txt, base_path):
 def main():
     
     base_path = os.getcwd()
-    base_path = os.path.join(base_path, 'projects/JUNO')
+   # base_path = os.path.join(base_path, 'projects/JUNO')      #servidor
+    base_path = os.path.join(base_path, 'JUNO')               #minha maquina
     
     #Quando criar o cronjob para correr este script diariamente, este for desaparece e day passa a ser 1 (yesterday)
     #for day in range(2, 4):

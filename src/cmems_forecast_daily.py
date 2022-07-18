@@ -267,7 +267,10 @@ def main():
     with open('JUNO/data/copernicus_login.txt') as f:   #quando fizer clone para o servidor esta documento .txt vai ser ignorado
         lines = f.readlines()
         
-    USERNAME = lines[0][:-1]
+    #USERNAME = lines[0][:-1]
+    #PASSWORD = lines[1][:-1]
+  
+    USERNAME = lines[0][1:-1]
     PASSWORD = lines[1][:-1]
   
     exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_forecast_daily_data'))
@@ -300,12 +303,6 @@ def main():
 
     #Submit data request
     motuclient.motu_api.execute_request(MotuOptions(data_request_options_dict_automated))
-
-    base_path = os.getcwd()
-    base_path = os.path.join(base_path, 'JUNO')
-    
-    #Quando criar o cronjob para correr este script diariamente, este for desaparece e day passa a ser 1 (yesterday)
-    day_txt = (date.today() - timedelta(days=2)).strftime('%Y-%m-%d')
     
     exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_forecast_daily_images'))
     if not exist_path:

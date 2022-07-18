@@ -178,6 +178,7 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
             c = plt.contour(X, Y, w, [thresValue])     #Create and store a set of contour lines or filled regions.
                      
                 
+        #breakpoint()
         
         M = c.allsegs[:]          #list of arrays for contour c. Each array corresponds to a line that may or may
                                     #not be drawn. This list can have any number of arrays
