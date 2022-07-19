@@ -267,10 +267,10 @@ def main():
     with open('JUNO/data/copernicus_login.txt') as f:   #quando fizer clone para o servidor esta documento .txt vai ser ignorado
         lines = f.readlines()
         
-    #USERNAME = lines[0][:-1]
+    #USERNAME = lines[0][:-1]    #SERVIDOR
     #PASSWORD = lines[1][:-1]
   
-    USERNAME = lines[0][1:-1]
+    USERNAME = lines[0][1:-1]    #MINHA MAQUINA
     PASSWORD = lines[1][:-1]
   
     exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_forecast_daily_data'))

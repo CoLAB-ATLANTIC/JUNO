@@ -179,9 +179,10 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
                      
                 
         #breakpoint()
-        
-        M = c.allsegs[:]          #list of arrays for contour c. Each array corresponds to a line that may or may
-                                    #not be drawn. This list can have any number of arrays
+        try:
+            M = c.allsegs[:]          #list of arrays for contour c. Each array corresponds to a line that may or may not be drawn. This list can have any number of arrays
+        except:
+            M = []
             
         M = [x for x in M if x]   #if the list has empty arrays we will drop them
         
