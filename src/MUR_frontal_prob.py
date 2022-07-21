@@ -365,7 +365,7 @@ def main():
     #canny_frontal_prob_visualization(base_path=base_path, period=specificday_mur, dict_df=dict_df_mur, period_txt=period_txt, Tmin=200, Tmax=300, sigma=5, apertureSize=5, vmax=30)
     
     start_time_boa = time.time()
-    boa_frontal_prob_visualization(base_path=base_path, period=specificday_mur[:1], df = dict_df_mur, threshold=0.05, vmin=None, vmax=None, period_txt=period_txt)
+    boa_frontal_prob_visualization(base_path=base_path, period=specificday_mur[:2], df = dict_df_mur, threshold=0.05, vmin=None, vmax=None, period_txt=period_txt)
     print(f'It took {time.time()-start_time_boa} seconds to apply the BOA')
     
     #CCA_frontal_prob_visualization(base_path=base_path, period = specificday_mur, dict_df=dict_df_mur, period_txt=period_txt)
