@@ -120,7 +120,7 @@ def download_mur(base_path, years=10, from_start_date = '0601', to_end_date='083
 def main():
     
     base_path = os.getcwd()
-    base_path = os.path.join(base_path, 'JUNO')
+    base_path = os.path.join(base_path, 'JUNO')     
     
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_seasonal_data'))   #check if folder MUR_seasonal_data exists in data folder
     if not exist_path:                                                               #if it don't exist:

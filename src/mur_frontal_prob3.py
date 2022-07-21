@@ -11,6 +11,7 @@ from matplotlib.colors import ListedColormap
 from scipy.ndimage import gaussian_filter
 import BOA     
 import CayulaCornillon
+import time
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
@@ -358,16 +359,22 @@ def main():
         #dict_df_mur -> dictionaire of dataframes for each day of the period in question
         #specificday_mur -> array with all the days of the period in question
         
+        start_time_canny = time.time()
         fp_canny = fp_canny + frontal_prob_canny(period=specificday_mur, dict_df=dict_df_mur, Tmin=200, Tmax=300, sigma=5, apertureSize=5)
         
+        print(f'It took {filename}, {time.time()-start_time_canny} seconds to apply the Canny Algorithm')
         print(f'Canny runned in file {filename}')
         
+        start_time_boa = time.time()
         fp_boa = fp_boa + frontal_prob_boa(period=specificday_mur, df=dict_df_mur, threshold=0.05)
         
+        print(f'It took {filename}, {time.time()-start_time_boa} seconds to apply the BOA')
         print(f'BOA runned in file {filename}')
         
+        start_time_cca = time.time()
         fp_cca = fp_cca + frontal_prob_cca(period=specificday_mur, dict_df=dict_df_mur)
         
+        print(f'It took {filename}, {time.time()-start_time_cca} seconds to apply the CCA')
         print(f'CCA runned in file {filename}')
         
         count += 1
