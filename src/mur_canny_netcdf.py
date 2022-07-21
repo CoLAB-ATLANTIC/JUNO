@@ -194,7 +194,7 @@ def canny_front_detection_1day(df, day_txt, base_path, thresh_min=120, thresh_ma
     times = ds.createVariable('time', 'f4', ('time', ))
     lats = ds.createVariable('lat', 'f4', ('lat', ))
     lons = ds.createVariable('lon', 'f4', ('lon', ))
-    value = ds.createVariable('value', 'i1', ('time', 'lat', 'lon',))
+    value = ds.createVariable('value', 'u1', ('time', 'lat', 'lon',))
     value.units = 'Unknown'
     
     lats[:] = np.linspace(35, 45, 1001)

@@ -12,6 +12,7 @@ from matplotlib.colors import ListedColormap
 from scipy.ndimage import gaussian_filter
 import BOA     
 import CayulaCornillon
+import time
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
@@ -361,11 +362,13 @@ def main():
         os.makedirs(os.path.join(base_path, 'data/MUR_seasonal_images'))
     
 
-    canny_frontal_prob_visualization(base_path=base_path, period=specificday_mur, dict_df=dict_df_mur, period_txt=period_txt, Tmin=200, Tmax=300, sigma=5, apertureSize=5, vmax=30)
+    #canny_frontal_prob_visualization(base_path=base_path, period=specificday_mur, dict_df=dict_df_mur, period_txt=period_txt, Tmin=200, Tmax=300, sigma=5, apertureSize=5, vmax=30)
     
-    boa_frontal_prob_visualization(base_path=base_path, period=specificday_mur, df = dict_df_mur, threshold=0.05, vmin=None, vmax=None, period_txt=period_txt)
+    start_time_boa = time.time()
+    boa_frontal_prob_visualization(base_path=base_path, period=specificday_mur[:1], df = dict_df_mur, threshold=0.05, vmin=None, vmax=None, period_txt=period_txt)
+    print(f'It took {time.time()-start_time_boa} seconds to apply the BOA')
     
-    CCA_frontal_prob_visualization(base_path=base_path, period = specificday_mur, dict_df=dict_df_mur, period_txt=period_txt)
+    #CCA_frontal_prob_visualization(base_path=base_path, period = specificday_mur, dict_df=dict_df_mur, period_txt=period_txt)
     
 
 if __name__ == "__main__":
