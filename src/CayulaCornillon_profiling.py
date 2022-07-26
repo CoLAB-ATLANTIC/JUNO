@@ -3,6 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from math import floor, ceil
+from time import time
 
 np.set_printoptions(suppress=True)    #so the values in arrays don't came with that exponential format
 
@@ -212,6 +213,7 @@ def CCA_SIED(df):
     latitude and SST values. 
     For a single image, the function return the fronts coordinates (x,y) points 
     """
+    start_algorithm = time()
     
     #convert the latitude and longitude columns to a numpy array
     lat = df['latitude'].to_numpy()
@@ -220,8 +222,11 @@ def CCA_SIED(df):
     lat = np.unique(lat).round(3)                        #get the unique values of the latitude array
     lon = np.unique(lon).round(3)                        #get the unique values of the longitude array
     
+    start_pivot_table=time()
     #get the sst values as a grid acording to the longitude (nr of rows) and latitude (nr of columns)
     sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').values.round(4)
+    end_pivot_table=time()
+    print(f'It took {end_pivot_table-start_pivot_table}s to run pivot table for the data')
     
     lat_min, lat_max, lon_min, lon_max = lat.min(), lat.max(), lon.min(), lon.max()  
         
@@ -230,8 +235,11 @@ def CCA_SIED(df):
     lat = Y.T
     lon = X.T
 
+    start_griddata = time()
     from scipy.interpolate import griddata
     Z = griddata((lon.flatten(), lat.flatten()), sst.flatten(), (X,Y), method='linear')  
+    end_griddata=time()
+    print(f'Took {end_griddata-start_griddata}s' to run the griddata function)
     
     head = np.array([lon_min, lon_max], dtype='float64')           
     head = np.append(head, [lat_min, lat_max])  
@@ -314,5 +322,7 @@ def CCA_SIED(df):
                 
                     ydata_final = np.append(ydata_final,ydata)
                     
+    end_algorithm = time()
+    print(f'It took {end_algorithm-start_algorithm}s to run the entire CCA for 1 day of data')
                 
     return xdata_final, ydata_final                
