@@ -234,12 +234,8 @@ def CCA_SIED(df):
 
     lat = Y.T
     lon = X.T
-
-    start_griddata = time()
-    from scipy.interpolate import griddata
-    Z = griddata((lon.flatten(), lat.flatten()), sst.flatten(), (X,Y), method='linear')  
-    end_griddata=time()
-    print(f'Took {end_griddata-start_griddata}s' to run the griddata function)
+    
+    Z = df['thetao'].to_numpy(dtype ='float32').reshape((1001,1401))
     
     head = np.array([lon_min, lon_max], dtype='float64')           
     head = np.append(head, [lat_min, lat_max])  
