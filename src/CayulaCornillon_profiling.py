@@ -222,12 +222,6 @@ def CCA_SIED(df):
     lat = np.unique(lat).round(3)                        #get the unique values of the latitude array
     lon = np.unique(lon).round(3)                        #get the unique values of the longitude array
     
-    start_pivot_table=time()
-    #get the sst values as a grid acording to the longitude (nr of rows) and latitude (nr of columns)
-    sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').values.round(4)
-    end_pivot_table=time()
-    print(f'It took {end_pivot_table-start_pivot_table}s to run pivot table for the data')
-    
     lat_min, lat_max, lon_min, lon_max = lat.min(), lat.max(), lon.min(), lon.max()  
         
     X, Y = np.meshgrid(lon, lat)                              #create rectangular grid out of two given 1D arrays
