@@ -10,7 +10,8 @@ import matplotlib
 from matplotlib.colors import ListedColormap
 from scipy.ndimage import gaussian_filter
 import BOA     
-import CayulaCornillon
+#import CayulaCornillon
+import CayulaCornillon_profiling
 import time
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
@@ -251,7 +252,7 @@ def front_calc(df):
     x = np.array([])
     y = np.array([])
         
-    xdata_final, ydata_final = CayulaCornillon.CCA_SIED(df)       
+    xdata_final, ydata_final = CayulaCornillon_profiling.CCA_SIED(df)       
     x = np.append(x, xdata_final)
     y = np.append(y, ydata_final)
         
