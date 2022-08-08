@@ -86,7 +86,7 @@ def download_sst_thread(data_range, sst_path, mur_j0, mur_j1, mur_i0, mur_i1, re
 #######################################################################################################
 
 
-def download_mur(base_path, years=10, from_start_date = '0601', to_end_date='0831', period_txt='summer'):
+def download_mur(base_path, years=10, from_start_date = '0601', to_end_date='0831'):
     
     """
     O objectivo desta função é fazer o download dos dados do MUR para um certo periodo (por exempolo no nosso caso queremos os Verões dos ultimos 10 anos, 
@@ -103,17 +103,7 @@ def download_mur(base_path, years=10, from_start_date = '0601', to_end_date='083
         end.append(str((date.today().year-i)) + to_end_date)          # 'to_end_date = 0831' -> termina a 31 de Agosto
 
     for j in range(0, len(start)):
-        download_sst_thread(data_range = pd.date_range(start=pd.to_datetime(start[j]), end=pd.to_datetime(end[j])), sst_path=os.path.join(base_path, 'data/MUR_seasonal_data/'), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
-        
-    for k in range(0, len(start)):
-    #Merge netCDF files (summer of last 10 years)
-        ds = xr.open_mfdataset(os.path.join(base_path, 'data/MUR_seasonal_data/sst_' + start[k][:4] + '*' + '.nc'), combine = 'nested', concat_dim="time")
-        ds.to_netcdf(os.path.join(base_path, 'data/MUR_seasonal_data/sst.') + period_txt + start[k][:4] +'.nc')
-            
-    
-        # depois deveria apagar os ficheiros netCDF individuais que começam por sst e acabam em .nc
-    for f in glob.glob(os.path.join(base_path, 'data/MUR_seasonal_data/sst_*.nc')):
-        os.remove(f)        
+        download_sst_thread(data_range = pd.date_range(start=pd.to_datetime(start[j]), end=pd.to_datetime(end[j])), sst_path=os.path.join(base_path, 'data/MUR_single_days/'), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
 
         
         
@@ -122,14 +112,14 @@ def main():
     base_path = os.getcwd()
     base_path = os.path.join(base_path, 'JUNO')     
     
-    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_seasonal_data'))   #check if folder MUR_seasonal_data exists in data folder
+    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_single_days'))   #check if folder MUR_seasonal_data exists in data folder
     if not exist_path:                                                               #if it don't exist:
-        os.makedirs(os.path.join(base_path, 'data/MUR_seasonal_data'))               #create the folder
+        os.makedirs(os.path.join(base_path, 'data/MUR_single_days'))               #create the folder
     
     
     #download_mur(base_path=base_path, years=2, from_start_date = '0601', to_end_date='0604')      
     #download_mur(base_path=base_path, years=10, from_start_date = '0601', to_end_date='0831', period_txt='summer')   
-    download_mur(base_path=base_path, years=1, from_start_date = '0801', to_end_date='0831', period_txt='august2021')   
+    download_mur(base_path=base_path, years=10, from_start_date = '0601', to_end_date='0831')   
     
     
 
