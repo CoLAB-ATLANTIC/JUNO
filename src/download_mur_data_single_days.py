@@ -123,7 +123,7 @@ def main():
     #download_mur(base_path=base_path, years=3, from_start_date = '0601', to_end_date='0610')   
     
     #FAZER DOWNLOAD DOS DIAS QUE FALTAM 2021-02-20 E 2021-02-21
-    download_mur(base_path=base_path, years=1, from_start_date = '0220', to_end_date='0221')   
+    download_mur(base_path=base_path, years=1, from_start_date = '0219', to_end_date='0222')   
     
     
     
