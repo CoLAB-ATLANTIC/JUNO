@@ -133,15 +133,15 @@ def main():
     base_path = os.getcwd()
     base_path = os.path.join(base_path, 'JUNO')
     
-    period_txt = input("Type name of the period for which we are applying the algorithms: ")
+    #period_txt = input("Type name of the period for which we are applying the algorithms: ")
     
-    fp_cca = np.zeros((1001, 1401))
-    count=0
+    #fp_cca = np.zeros((1001, 1401))
+    #count=0
     
     
-    #exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_fronts_npy'))
-    #if not exist_path:
-     #   os.makedirs(os.path.join(base_path, 'data/MUR_daily_fronts_npy'))
+    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_fronts_npy'))
+    if not exist_path:
+        os.makedirs(os.path.join(base_path, 'data/MUR_daily_fronts_npy'))
     
     
     for filename in os.listdir((os.path.join(base_path, 'data/MUR_single_days'))):
@@ -153,33 +153,34 @@ def main():
         front = front_calc(data_xarray)
         front = front.astype('int8')
         
-        fp_cca = fp_cca + front
+        #fp_cca = fp_cca + front
         
         
-        #np.save('JUNO/data/MUR_daily_fronts_npy/' + filename.replace('nc', 'npy'), front)
+        np.save('JUNO/data/MUR_daily_fronts_npy/' + filename.replace('nc', 'npy'), front)
         
         del(front)
+        del(data_xarray)
         gc.collect()
         
-        count += 1
+        #count += 1
         
         print(f'It took {filename}, {time.time()-start_time_cca} seconds to get the netCDF from file, convert it to df, apply the CCA and save the fronts array')
         print(f'CCA runned in file {filename}')
         
         #count += 1
         
-    #so serve para a função CCA_frontal_prob_visualizationpara fazer um map da zona continental
+    #so serve para a função CCA_frontal_prob_visualization para fazer um map da zona continental
     #data_xarray = get_data(base_path=base_path, data='sst_20190601.nc')
         
 
-    fp_cca = fp_cca/count
+    #fp_cca = fp_cca/count
     
-    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_seasonal_images'))
-    if not exist_path:
-        os.makedirs(os.path.join(base_path, 'data/MUR_seasonal_images'))
+    #exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_seasonal_images'))
+    #if not exist_path:
+     #   os.makedirs(os.path.join(base_path, 'data/MUR_seasonal_images'))
 
     
-    CCA_frontal_prob_visualization(base_path=base_path, data_xarray = data_xarray, period_txt=period_txt, fp_cca=fp_cca, vmax=None)
+    #CCA_frontal_prob_visualization(base_path=base_path, data_xarray = data_xarray, period_txt=period_txt, fp_cca=fp_cca, vmax=None)
     
     
 
