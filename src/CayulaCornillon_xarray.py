@@ -40,12 +40,15 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
     [y, xout] = np.histogram(w[:], bins, mi_ma)                   #y->frequency counts, Xout->bin location
     xout = np.mean(np.vstack([xout[0:-1],xout[1:]]), axis=0)      #xout to be relative to the centers of the bins
     
-    
-    thresValue = xout[0]        
+    try:
+        thresValue = xout[0]  
+    except:
+        thresValue = 0
+        
+          
     totalCount = len(w.flatten()) - n_NaNs                         #nr of non NaN pixels 
     threshPopACount, threshSeparation, threshPopAMean, threshPopBMean  = 0, -1, 0, 0
  
-    
     w[mask==1] = 0                      #Replace NaNs with 0's (when mask is 1 replace values of array w for 0)
     totalSum = sum(w.flatten())                      #sum of values of matrix w
     totalSumSquares = sum(w.flatten()*w.flatten())   #sum of the squares of the values of w
