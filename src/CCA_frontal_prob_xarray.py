@@ -12,6 +12,7 @@ from matplotlib.colors import ListedColormap
 import CayulaCornillon_xarray
 import time
 import gc
+import sys
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
@@ -144,30 +145,31 @@ def main():
         os.makedirs(os.path.join(base_path, 'data/MUR_daily_fronts_npy'))
     
     
-    for filename in os.listdir((os.path.join(base_path, 'data/MUR_single_days'))):
+    #for filename in sorted(os.listdir((os.path.join(base_path, 'data/MUR_single_days')))):
+    
+    filename = os.path.join(base_path, 'data/MUR_single_days', sys.argv[1])
         
-        start_time_cca = time.time()
+    start_time_cca = time.time()
         
-        data_xarray = get_data(base_path=base_path, data = filename)    #neste caso data vai ser o nome do netcdf file que queremos importar (guardado no directorio MUR_seasonal_data)
+    data_xarray = get_data(base_path=base_path, data = filename)    #neste caso data vai ser o nome do netcdf file que queremos importar (guardado no directorio MUR_seasonal_data)
         
-        front = front_calc(data_xarray)
-        front = front.astype('int8')
-        
-        #fp_cca = fp_cca + front
-        
-        
-        np.save('JUNO/data/MUR_daily_fronts_npy/' + filename.replace('nc', 'npy'), front)
-        
-        del(front)
-        del(data_xarray)
-        gc.collect()
-        
-        #count += 1
-        
-        print(f'It took {filename}, {time.time()-start_time_cca} seconds to get the netCDF from file, convert it to df, apply the CCA and save the fronts array')
-        print(f'CCA runned in file {filename}')
-        
-        #count += 1
+    front = front_calc(data_xarray)
+    front = front.astype('int8')
+    
+    #fp_cca = fp_cca + front
+    
+    
+    np.save('JUNO/data/MUR_daily_fronts_npy/' + filename.replace('nc', 'npy').split('/')[-1], front)
+    
+    del(front)
+    del(data_xarray)
+    gc.collect()
+    
+    #count += 1
+    
+    print(f'It took {filename}, {time.time()-start_time_cca} seconds to get the netCDF from file, convert it to an xarray, apply the CCA and save the fronts array')
+    
+    #count += 1
         
     #so serve para a função CCA_frontal_prob_visualization para fazer um map da zona continental
     #data_xarray = get_data(base_path=base_path, data='sst_20190601.nc')
