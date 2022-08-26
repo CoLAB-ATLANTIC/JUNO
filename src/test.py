@@ -82,4 +82,4 @@ plt.imshow(frontal_prob, cmap=newcmp, extent = [lon[0], lon[-1], lat[0], lat[-1]
 #extent is to define the extention of the x and y axis
 plt.title("Cayula-Cornillon Algorithm Frontal Probability (MUR) ", fontsize=20)
 plt.colorbar(orientation='horizontal', fraction=0.025, pad=0.08, aspect=50)
-plt.savefig(os.path.join(base_path, 'MUR_seasonal_images/CCA_frontal_prob_Summer_2012To2021.jpg'))
+plt.savefig(os.path.join(base_path, 'data/MUR_seasonal_images/CCA_frontal_prob_Summer_2012To2021.jpg'))
