@@ -11,10 +11,9 @@ import matplotlib
 from matplotlib.colors import ListedColormap
 
 base_path = os.getcwd()
-os.path.join(base_path, 'JUNO/data')
+os.path.join(base_path, 'JUNO')
 
-
-nc_path = os.path.join(base_path, 'CCA_MUR_fronts.nc')
+nc_path = os.path.join(base_path, 'data/CCA_MUR_fronts.nc')
 ds = nc.Dataset(nc_path)
 data_xarray = xr.load_dataset(nc_path, decode_times=False)     #data is an xarray
 
