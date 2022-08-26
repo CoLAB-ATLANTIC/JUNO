@@ -1,4 +1,6 @@
 
+### SCRIPT para pegar nos arrays de fronts e criar a partir dele um ficheiro NetCDF
+
 #Import Libraries
 
 import numpy as np
