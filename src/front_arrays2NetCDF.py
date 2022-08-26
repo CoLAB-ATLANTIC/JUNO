@@ -20,12 +20,12 @@ time = ds.createDimension('time')
 lat = ds.createDimension('lat', 1001)
 lon = ds.createDimension('lon', 1401)
 
-times = ds.createVariable('time', np.int32, ('time', ))
+times = ds.createVariable('time', 'f4', ('time', ))
 lats = ds.createVariable('lat', 'f4', ('lat', ))
 lons = ds.createVariable('lon', 'f4', ('lon', ))
 value = ds.createVariable('value', 'u1', ('time', 'lat', 'lon',))
 value.units = 'Unknown'
-times.units = 'days since 01-01-01'
+times.units = 'days since 1-1-1'
 
 lats[:] = np.linspace(35, 45, 1001)
 lons[:] = np.linspace(-19, -5, 1401)
@@ -41,7 +41,6 @@ for filename in sorted(glob.glob((os.path.join(base_path, 'data/MUR_daily_fronts
     date_str = filename.split('sst_', 1)[1]
     date_str = date_str.split('.', 1)[0]
 
-    
     date_obj = datetime.datetime.strptime(date_str, '%Y%m%d')
     dates.append(date_obj)
     
@@ -51,6 +50,7 @@ for filename in sorted(glob.glob((os.path.join(base_path, 'data/MUR_daily_fronts
     
 #times = dates
 dates_time = [tmp.toordinal() for tmp in dates]
+print(dates_time)
 #dates_time = date2num(dates, times.units)
 times[:] = dates_time
 
