@@ -48,7 +48,7 @@ if not exist_path:
 
 
 ################################################## Get MUR data for 1 day to Map the Continental Zone  ###########################################
-nc_map_path = os.path.join(base_path, "sst_20220615.nc")
+nc_map_path = os.path.join(base_path, "data/sst_20220615.nc")
 ds = nc.Dataset(nc_map_path)
 data_map = xr.load_dataset(nc_map_path)
 
