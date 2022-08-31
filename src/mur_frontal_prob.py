@@ -1,3 +1,8 @@
+
+# This script allows you to import MUR data stored in the MUR_seasonal_data directory and 
+# then apply the 3 algorithms (CCA being all commented out because it takes too long to apply CCA to large amounts of data). 
+# The results of applying the algorithms (Canny and BOA) are stored in the MUR_seasonal_images directory
+
 #Import Libraries
 
 import pandas as pd
@@ -10,8 +15,7 @@ import matplotlib
 from matplotlib.colors import ListedColormap
 from scipy.ndimage import gaussian_filter
 import BOA     
-#import CayulaCornillon
-import CayulaCornillon_profiling
+import CayulaCornillon_df
 import time
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
@@ -34,7 +38,6 @@ def get_data(base_path, data):
     data_folder = os.path.join(base_path, "data/MUR_seasonal_data")  
     
     nc_path = os.path.join(data_folder, data)
-    #ds = nc.Dataset(nc_path)
     netCDF = xr.load_dataset(nc_path)
     
     df = netCDF.to_dataframe()
@@ -42,8 +45,6 @@ def get_data(base_path, data):
     
     df = df.drop(['depth'], axis=1, errors='ignore') #drop the column 'depth' if exists: only exists in reanalysis
     
-    #if we are importing MUR data, rename columns and convert temperature to Celsius
-    #if data.startswith('mur'):
     df.rename(columns={'lat': 'latitude', 'lon': 'longitude', 'time': 'time', 'analysed_sst':'thetao'}, inplace=True)
     df['thetao'] = df['thetao']-273.15   
     
@@ -235,7 +236,7 @@ def boa_frontal_prob_visualization(base_path, period, df, period_txt, fp_boa, vm
 ####################################################################################################################################
 ############################################ CCA Frontal Probabilities  ############################################################
 
-def front_calc(df): 
+#def front_calc(df): 
     
     """
     Function that calculates the fronts matrix. Given an image (SST data respective to one day) it applies the
@@ -252,7 +253,7 @@ def front_calc(df):
     x = np.array([])
     y = np.array([])
         
-    xdata_final, ydata_final = CayulaCornillon_profiling.CCA_SIED(df)       
+    xdata_final, ydata_final = CayulaCornillon_df.CCA_SIED(df)       
     x = np.append(x, xdata_final)
     y = np.append(y, ydata_final)
         
@@ -277,7 +278,7 @@ def front_calc(df):
     return front    
 
 
-def frontal_prob_cca(period, dict_df):
+#def frontal_prob_cca(period, dict_df):
     
     """
     Function that allows the visualization of the Frontal Probabilities for the Cayula-Cornillon Algorithm (CCA).
@@ -297,7 +298,7 @@ def frontal_prob_cca(period, dict_df):
     return front_prob
     
     
-def CCA_frontal_prob_visualization(base_path, period, dict_df, period_txt, fp_cca, vmax=None):   
+#def CCA_frontal_prob_visualization(base_path, period, dict_df, period_txt, fp_cca, vmax=None):   
     
     """
     The purpose of this function is to load the memory from different front matrixes for different days,
@@ -350,7 +351,7 @@ def main():
     
     fp_canny = np.zeros((1001,1401))   #if its MUR data, fp shape must be (1001, 1401)
     fp_boa = np.zeros((1001, 1401))
-    fp_cca = np.zeros((1001, 1401))
+    #fp_cca = np.zeros((1001, 1401))
     count=0
     
     for filename in os.listdir((os.path.join(base_path, 'data/MUR_seasonal_data'))):
@@ -364,25 +365,22 @@ def main():
         fp_canny = fp_canny + frontal_prob_canny(period=specificday_mur, dict_df=dict_df_mur, Tmin=200, Tmax=300, sigma=5, apertureSize=5)
         
         print(f'It took {filename}, {time.time()-start_time_canny} seconds to apply the Canny Algorithm')
-        print(f'Canny runned in file {filename}')
         
         start_time_boa = time.time()
         fp_boa = fp_boa + frontal_prob_boa(period=specificday_mur, df=dict_df_mur, threshold=0.05)
         
         print(f'It took {filename}, {time.time()-start_time_boa} seconds to apply the BOA')
-        print(f'BOA runned in file {filename}')
         
-        start_time_cca = time.time()
-        fp_cca = fp_cca + frontal_prob_cca(period=specificday_mur, dict_df=dict_df_mur)
+        #start_time_cca = time.time()
+        #fp_cca = fp_cca + frontal_prob_cca(period=specificday_mur, dict_df=dict_df_mur)
         
-        print(f'It took {filename}, {time.time()-start_time_cca} seconds to apply the CCA')
-        print(f'CCA runned in file {filename}')
+        #print(f'It took {filename}, {time.time()-start_time_cca} seconds to apply the CCA')
         
         count += 1
         
     fp_canny = fp_canny/count
     fp_boa = fp_boa/count
-    fp_cca = fp_cca/count
+    #fp_cca = fp_cca/count
     
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_seasonal_images'))
     if not exist_path:
@@ -392,7 +390,7 @@ def main():
     
     boa_frontal_prob_visualization(base_path=base_path, period=specificday_mur, df=dict_df_mur, period_txt=period_txt, fp_boa=fp_boa, vmin=None, vmax=None)
     
-    CCA_frontal_prob_visualization(base_path=base_path, period=specificday_mur, dict_df=dict_df_mur, period_txt=period_txt, fp_cca=fp_cca, vmax=None)
+    #CCA_frontal_prob_visualization(base_path=base_path, period=specificday_mur, dict_df=dict_df_mur, period_txt=period_txt, fp_cca=fp_cca, vmax=None)
     
     
 

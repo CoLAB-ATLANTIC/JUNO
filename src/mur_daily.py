@@ -3,6 +3,10 @@
 ##########################################################################################################
 
 
+# Script which, through a daily cron job makes the donwload of daily MUR data and saves it in the MUR_daily_data folder.
+# Then it applies the 3 algorithms to the data and stores the 3 images results + the real image in the MUR_algorithm_daily_images 
+
+
 #Import Libraries
 import pandas as pd
 import numpy as np
@@ -24,7 +28,7 @@ from pydap.client import open_url
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
 import BOA
-import CayulaCornillon
+import CayulaCornillon_df
 
 
 ################################################ DOWNLOAD MUR DATA ##################################################
@@ -238,7 +242,7 @@ def CCA_front(df, day_txt, base_path):
 
     front = np.zeros((1001,1401))       #initialize a matrix of zeros. This shape is for the MUR data
         
-    xdata_final, ydata_final = CayulaCornillon.CCA_SIED(df)       
+    xdata_final, ydata_final = CayulaCornillon_df.CCA_SIED(df)       
     
     cols_x = np.array([])
     for value in xdata_final:                     #convert values in array x to the respective index in a (1001, 1401) matrix

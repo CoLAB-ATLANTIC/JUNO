@@ -1,4 +1,8 @@
 
+# This script downloads MUR data individually, i.e. it allows you to define a time period and then download the data for all the days in that period. 
+# These netCDF files are stored in folder: MUR_single_days
+
+
 import os
 import numpy as np
 import pandas as pd
@@ -7,9 +11,8 @@ from math import floor
 from pydap.client import open_url
 from tqdm import tqdm
 import sys
-import xarray as xr
 from datetime import date
-import glob
+
 
 
 ##################################### FUNCTIONS TO DOWNLOAD MUR DATA ###########################################

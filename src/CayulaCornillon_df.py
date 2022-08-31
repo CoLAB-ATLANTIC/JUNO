@@ -1,8 +1,16 @@
+
+# Script with the necessary functions to apply the Cayula Cornillon Algorithm.
+# This script was profilled in order to maximize speed and efficiency
+# In this script the function CCA_SIED has an dataframe as argument (instead of an xarray used in the CayulaCornillon_xarray.py script)
+
+
 #Import Libraries
 
 import numpy as np
 import matplotlib.pyplot as plt
-import math
+from math import floor, ceil
+
+np.set_printoptions(suppress=True)    #so the values in arrays don't came with that exponential format
 
 
 ##################################### Cayula-Cornillon Functions ############################################################3
@@ -16,9 +24,7 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
     """
     
     #empty arrays de xdata, ydata e z
-    xdata = np.array([])
-    ydata = np.array([])
-    z = np.array([])
+    xdata, ydata = np.array([]), np.array([])
     exitType=0
     
     #mask is an array with the same shape of w, that is 1 if in that index position w = np.nan and 0 otherwise
@@ -34,7 +40,7 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
             return None,None,None,exitType  
         
     mi_ma = [np.nanmin(w), np.nanmax(w)]                          #array with minimum and maximum value of w
-    n = math.ceil((mi_ma[1]-mi_ma[0])/0.02)                       #number of bins
+    n = ceil((mi_ma[1]-mi_ma[0])/0.02)                            #number of bins
     bins = np.arange(mi_ma[0], mi_ma[1], 0.02)                    #to define the bins sequence 
     [y, xout] = np.histogram(w[:], bins, mi_ma)                   #y->frequency counts, Xout->bin location
     xout = np.mean(np.vstack([xout[0:-1],xout[1:]]), axis=0)      #xout to be relative to the centers of the bins
@@ -42,10 +48,8 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
     
     thresValue = xout[0]        
     totalCount = len(w.flatten()) - n_NaNs                         #nr of non NaN pixels 
-    threshPopACount = 0
-    threshSeparation = -1
-    threshPopAMean = 0
-    threshPopBMean = 0
+    threshPopACount, threshSeparation, threshPopAMean, threshPopBMean  = 0, -1, 0, 0
+ 
     
     w[mask==1] = 0                      #Replace NaNs with 0's (when mask is 1 replace values of array w for 0)
     totalSum = sum(w.flatten())                      #sum of values of matrix w
@@ -73,15 +77,10 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
             threshPopBMean = popBMean
             
          
-    #abort in case the proportion of population A is less that a certain minimum
-    if (threshPopACount / totalCount < minPopProp):
+    #abort in case the proportion of population A is less that a certain minimum OR in case the proportion of population B is less that a certain minimum
+    if (threshPopACount / totalCount < minPopProp) or (1.0 - threshPopACount / totalCount < minPopProp):
         exitType = 1
         return None,None, None, exitType  
-    
-    #abort in case the proportion of population B is less that a certain minimum
-    if (1.0 - threshPopACount / totalCount < minPopProp):
-        exitType = 1
-        return None,None,None, exitType  
     
     #abort this window if the difference in the populations means is less than a minimum value
     if (threshPopBMean - threshPopAMean < minPopMeanDiff):   
@@ -102,10 +101,7 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
 #Count the nr of times a population A cell is immediately adjacent to another popA cell and the same for popB
 # A cell can be adjacent on 4 sides. Count only 2 of them (bottom and right side) because doing all 4 would be
 #redundant. Do not count diagonal neighbors
-    countANextToA = 0
-    countBNextToB = 0
-    countANextToAOrB = 0
-    countBNextToAOrB = 0
+    countANextToA, countBNextToB, countANextToAOrB, countBNextToAOrB  = 0, 0, 0, 0
     [n_rows, n_cols] = w.shape
     for col in range(0, n_cols-1):
         for row in range(0, n_rows-1):
@@ -139,17 +135,9 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
     globalCohesion = (countANextToA + countBNextToB) / (countANextToAOrB + countBNextToAOrB)
     
     #These ifs are in case of errors (parameters below certain limits)
-    if (popACohesion < minSinglePopCohesion):
+    if (popACohesion < minSinglePopCohesion) or (popBCohesion < minSinglePopCohesion) or (globalCohesion < minGlobalPopCohesion):
         exitType = 4
         return None, None,None,exitType  
-                         
-    if (popBCohesion < minSinglePopCohesion):
-        exitType = 4
-        return None, None, None,exitType  
-                         
-    if (globalCohesion < minGlobalPopCohesion):
-        exitType = 4
-        return None, None, None,exitType  
                          
                          
     #OK if we reach here we have a front. Compute its contour
@@ -200,30 +188,23 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
         for value in lista:
             if value == [True]:
                 continue        #return to the top of the for loop
-            else:
-        
-                #For the first array of M we will take all the values of x and put them into an array
-                x = []
-                for i in range(len(M[:][count][0])):
-                    x.append((M[:][count][0][i][0]).round(4))
+            else:                    
+                #For the first array of M we will take all the values of x and put them into an array                    
+                x = [(M[:][count][0][i][0]).round(4) for i in range(len(M[:][count][0]))]
                 
-                #For the first array of M we will take all the values of y and put them into an array
-                y = []
-                for i in range(len(M[:][count][0])):
-                    y.append((M[:][count][0][i][1]).round(4))
+                #For the first array of M we will take all the values of y and put them into an array                    
+                y = [(M[:][count][0][i][1]).round(4) for i in range(len(M[:][count][0]))]
                 
                 
                 #save the x and y data points for each line in an xdata and ydata array
-                xdata = np.append(xdata, x)    
-                ydata = np.append(ydata, y)
-                    
-                count = count + 1
+                xdata, ydata = np.append(xdata, x), np.append(ydata, y)
+                
+                count += 1
             
-        
         z = thresValue
         
         if (xdata.size == 0):
-            exitType = 5;
+            exitType = 5
             
     return xdata, ydata, z, exitType
         
@@ -245,27 +226,16 @@ def CCA_SIED(df):
     lat = np.unique(lat).round(3)                        #get the unique values of the latitude array
     lon = np.unique(lon).round(3)                        #get the unique values of the longitude array
     
-    #get the sst values as a grid acording to the longitude (nr of rows) and latitude (nr of columns)
-    sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').values.round(4)
-    
-    lat_min = lat.min()     
-    lat_max = lat.max()
-    lon_min = lon.min()
-    lon_max = lon.max()
+    lat_min, lat_max, lon_min, lon_max = lat.min(), lat.max(), lon.min(), lon.max()  
         
-    lat_unique = len(np.unique(lat))                     #nr of different latitude points
-    lon_unique = len(np.unique(lon))                     #nr of different longitude points
+    X, Y = np.meshgrid(lon, lat)                              #create rectangular grid out of two given 1D arrays
 
-    X = np.linspace(lon_min, lon_max, lon_unique)        #linearly spaced vector with the longitude points
-    Y = np.linspace(lat_min, lat_max, lat_unique)        #linearly spaced vector with the latitude points
-    X, Y = np.meshgrid(X, Y)                              #create rectangular grid out of two given 1D arrays
-
-    lat, lon = np.meshgrid(lat, lon)            
-
-    from scipy.interpolate import griddata
-    Z = griddata((lon.flatten(), lat.flatten()), sst.flatten(), (X,Y), method='linear')  
+    lat = Y.T
+    lon = X.T
     
-    head = np.array([lon_min, lon_max])           
+    Z = df['thetao'].to_numpy(dtype ='float32').reshape((1001,1401))
+    
+    head = np.array([lon_min, lon_max], dtype='float64')           
     head = np.append(head, [lat_min, lat_max])  
 
     z_dim = Z.shape                                                 #dimensions/shape of matrix Z (rows, cols)
@@ -279,26 +249,16 @@ def CCA_SIED(df):
     head = np.append(head, np.array([z_actual_range[0], z_actual_range[1] , node_offset]))    
     head = np.append(head, np.array((head[1]- head[0])/(nx - int(not node_offset))))     
     head = np.append(head, np.array((head[3]- head[2])/(ny - int(not node_offset))))     
-    head = head.astype('float')
 
     
-    #cayula
-    minPopProp = 0.20                  #minimum proportion of each population
-    minPopMeanDiff = 0.4               # minimum difference between the means of the 2 populations
-    minTheta = 0.70
-    minSinglePopCohesion = 0.90
-    minGlobalPopCohesion = 0.70
-    
+    #cayula;   minPopProp-> minimum proportion of each population;     minPopMeanDiff ->minimum difference between the means of the 2 populations
+    minPopProp, minPopMeanDiff, minTheta, minSinglePopCohesion, minGlobalPopCohesion = 0.2, 0.4, 0.7, 0.9, 0.7       
     
     [n_rows, n_cols] = Z.shape         #nr of rows and nr of columns of matrix Z
-    winW16 = 16
-    winW32 = 16*2
-    winW48 = 16*3
-
+    winW16, winW32, winW48 = 16, 32, 48
 
     #arrays that will store the contour of every front that will be detected
-    xdata_final = np.array([])
-    ydata_final = np.array([])
+    xdata_final, ydata_final = np.array([]), np.array([])
 
     s=0                              #s=1 means subwindows do NOT share a common border. With s = 0 they do.
 
@@ -307,8 +267,8 @@ def CCA_SIED(df):
     xSide32 = (winW32 - s) * head[7]
     ySide32 = (winW32 - s) * head[8]
 
-    nWinRows = math.floor(n_rows/winW16)   #times a window can slide over the rows 
-    nWinCols = math.floor(n_cols/winW16)   #times a window can slide over the columns
+    nWinRows = floor(n_rows/winW16)   #times a window can slide over the rows 
+    nWinCols = floor(n_cols/winW16)   #times a window can slide over the columns
 
 
     for wRow in range(1, nWinRows-1):    
@@ -355,6 +315,6 @@ def CCA_SIED(df):
                     xdata_final = np.append(xdata_final, xdata)
                 
                     ydata_final = np.append(ydata_final,ydata)
-                    
+            
                 
     return xdata_final, ydata_final                

@@ -1,3 +1,9 @@
+
+# Script with the necessary functions to apply the Cayula Cornillon Algorithm. 
+# This script was profilled in order to maximize speed and efficiency
+# In this script the function CCA_SIED has an xarray as argument (instead of a dataframe used in the CayulaCornillon_profiling.py script)
+
+
 #Import Libraries
 
 import numpy as np

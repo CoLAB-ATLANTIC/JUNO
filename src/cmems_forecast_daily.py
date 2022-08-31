@@ -1,4 +1,9 @@
 
+# Script that through a cron job downloads the daily data from the CMEMS Forecast (with 2 days delay but that can be changed), 
+# and saves them as a .nc file in the data folder: CMEMS_forecast_daily_data. 
+# Then it fetches this data and applies the 3 algorithms to it. (The data is used in dataframe format instead of x_array)
+
+
 import motuclient
 from datetime import date, timedelta
 import numpy as np
@@ -14,7 +19,7 @@ import cmocean
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
 import BOA
-import CayulaCornillon
+import CayulaCornillon_df    #CayulaCornillon after making some profiling changes to improve efficiency
 
 
 ################################################## DOWNLOAD CMEMS_REANALYSIS DATA #####################################################
@@ -181,7 +186,7 @@ def CCA_front(df, day_txt, base_path):
     
     front = np.zeros((361, 505))        #initialize a matrix of zeros. This shape is for the CMEMS Forecats data
         
-    xdata_final, ydata_final = CayulaCornillon.CCA_SIED(df)       
+    xdata_final, ydata_final = CayulaCornillon_df.CCA_SIED(df)       
     
     cols_x = np.array([])
     for value in xdata_final:                     #convert values in array x to the respective index in a (1001, 1401) matrix

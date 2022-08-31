@@ -1,3 +1,9 @@
+
+#This script allows us to get the data from the NetCDF file with the CCA fronts numpy arrays and
+# calculate the frontal probability array for a given period. 
+# The result is an image with the frontal probabilities for that period stored in the MUR_seasonal_images folder
+
+#Import libraries
 import numpy as np
 import os
 import netCDF4 as nc
@@ -23,7 +29,7 @@ for i in range(len(data_xarray['time'])):
     list_dates.append(datetime.datetime.fromordinal(int(data_xarray['time'][i])))
 
 
-#get a list with datetime.datetime de todos os dias dos Verões (Jul, Ago, Set) de 2012 a 2021
+#get a list with datetime.datetime de todos os dias dos Verões (Jul, Ago, Set) de 2012 a 2021 (WE CAN CHANGE FOR ANY OTHER PERIOD)
 summer_10years = []
 start_year = 2012
 while start_year < 2022:
