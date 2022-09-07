@@ -213,9 +213,8 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
 def CCA_SIED(df):
     
     """
-    This function applies the Cayula-Cornillon Algorithm Single Image Edge Detector (CCA_SIED) to a single image
-    df - dataframe in which the CCA_SIED will be applied. This datafram has a column for the longitude,
-    latitude and SST values. 
+    This function applies the Cayula-Cornillon Algorithm Single Image Edge Detector (CCA_SIED) to a single image data in 
+    df - dataframe format. This dataframe has a column for the longitude, latitude and SST values. 
     For a single image, the function return the fronts coordinates (x,y) points 
     """
     

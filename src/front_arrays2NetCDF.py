@@ -1,5 +1,5 @@
 
-# SCRIPT to get the numpy arrays of fronts related to the Cayula Cornillon Algorithm (sotred in the MUR_daily_fronts_npy folder)
+# SCRIPT to get the numpy arrays of fronts related to the Cayula Cornillon Algorithm (stored in the MUR_daily_fronts_npy folder)
 # and use them to create a netCDF file with all that data
 # With this netCDF we are going to be able to easily calculate a frontal probabilites of the CCA for a given period
 
@@ -15,11 +15,11 @@ import datetime
 nc_file = os.getcwd()
 nc_file = os.path.join('JUNO/data/CCA_MUR_fronts.nc')
 
-
 ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
 
 ds.title = 'CCA MUR Fronts Arrays'
 
+#create dimensions of the NetCDF file
 time = ds.createDimension('time')
 lat = ds.createDimension('lat', 1001)
 lon = ds.createDimension('lon', 1401)

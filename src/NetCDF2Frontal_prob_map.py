@@ -1,7 +1,7 @@
 
 #This script allows us to get the data from the NetCDF file with the CCA fronts numpy arrays and
 # calculate the frontal probability array for a given period. 
-# The result is an image with the frontal probabilities for that period stored in the MUR_seasonal_images folder
+# The result is an image (CCA) with the frontal probabilities for that period stored in the MUR_seasonal_images folder
 
 #Import libraries
 import numpy as np
@@ -18,8 +18,8 @@ from matplotlib.colors import ListedColormap
 
 base_path = os.getcwd()
 os.path.join(base_path, 'JUNO')
+nc_path = os.path.join(base_path, 'data/CCA_MUR_fronts.nc')  #path of the NetCDF file stored in the data folder
 
-nc_path = os.path.join(base_path, 'data/CCA_MUR_fronts.nc')
 ds = nc.Dataset(nc_path)
 data_xarray = xr.load_dataset(nc_path, decode_times=False)     #data is an xarray
 
@@ -61,7 +61,7 @@ data_map = xr.load_dataset(nc_map_path)
 #Convert the netCDF file to a dataframe
 datadf = data_map.to_dataframe()
 datadf = datadf.reset_index()
-datadf['analysed_sst'] =  datadf['analysed_sst']-273.15    #convert temperature to celsius
+datadf['analysed_sst'] =  datadf['analysed_sst']-273.15    #convert temperature to celsius (This is not needed!!!)
 
 sst = datadf.pivot_table(index='lon', columns='lat', values='analysed_sst').T.values
 mask = np.isnan(np.flipud(sst))    #Boolean array: True where array Temp had Null Values (correspond to the continental zone)

@@ -99,7 +99,7 @@ def main():
     if not exist_path:
         os.makedirs(os.path.join(base_path, 'data/MUR_daily_fronts_npy'))
     
-    #lemos todas as datas através do shell script front_arrays.sh
+    #lemos todas as datas através do shell script front_arrays.sh 
     filename = os.path.join(base_path, 'data/MUR_single_days', sys.argv[1])
         
     start_time_cca = time.time()

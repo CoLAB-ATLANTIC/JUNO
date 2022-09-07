@@ -95,7 +95,7 @@ def canny_front_calc(dict_df, Tmin, Tmax, sigma=5, apertureSize=5):
     #if its MUR data we have to apply gaussian filter with certain sigma value (~5)
     Temp_day = gaussian_filter(Temp_day, sigma=sigma)
     
-    #apply the canny algorithm 
+    #apply the canny algorithm from OpenCV
     canny = cv2.Canny(Temp_day, Tmin, Tmax, L2gradient=False, apertureSize=apertureSize)
     
     return canny  #return the matrix (if a pixel was considered a front than its value is 255; otherwise is 0)
@@ -197,7 +197,7 @@ def frontal_prob_boa(period, df, threshold=0.05):
     for day in period:
         fp = fp + BOA_aplication(df[day], threshold=threshold)
     
-    fp = fp/(len(period))*100     #for the calculation of the FP we divide by the number of periods (days) 
+    fp = fp/(len(period))*100     #for the calculation of the FP we divide by the number of periods (days) and multiply by 100 (%)
     
     return fp
 

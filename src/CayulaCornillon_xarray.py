@@ -1,7 +1,7 @@
 
 # Script with the necessary functions to apply the Cayula Cornillon Algorithm. 
 # This script was profilled in order to maximize speed and efficiency
-# In this script the function CCA_SIED has an xarray as argument (instead of a dataframe used in the CayulaCornillon_profiling.py script)
+# In this script the function CCA_SIED has an xarray as argument (instead of a dataframe used in the CayulaCornillon_df.py script)
 
 
 #Import Libraries
@@ -9,7 +9,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from math import floor, ceil
-from time import time
 
 np.set_printoptions(suppress=True)    #so the values in arrays don't came with that exponential format
 
@@ -52,20 +51,20 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
         thresValue = 0
         
           
-    totalCount = len(w.flatten()) - n_NaNs                         #nr of non NaN pixels 
+    totalCount = len(w.flatten()) - n_NaNs                                       #nr of non NaN pixels 
     threshPopACount, threshSeparation, threshPopAMean, threshPopBMean  = 0, -1, 0, 0
  
-    w[mask==1] = 0                      #Replace NaNs with 0's (when mask is 1 replace values of array w for 0)
+    w[mask==1] = 0                                   #Replace NaNs with 0's (when mask is 1 replace values of array w for 0)
     totalSum = sum(w.flatten())                      #sum of values of matrix w
     totalSumSquares = sum(w.flatten()*w.flatten())   #sum of the squares of the values of w
     
     #In this for loop we are going to discover which line is going to make the best separation between the average
     # of population on the left and on the right (A and B) - and that is going to be the thresValue
-    for k in range(1,n-1):     #ignore the first and last candidates (senão seria de 0 a n)
+    for k in range(1,n-1):                          #ignore the first and last candidates (senão seria de 0 a n)
         popASum = sum(y[0:k+1] * xout[0:k+1])    
         popBSum = sum(y[k+1:] * xout[k+1:])  
-        popACount = sum(y[0:k+1])     #sum of frequencies (y) from populationA
-        popBCount = sum(y[k+1:])      #sum of frequencies (y) from populationB
+        popACount = sum(y[0:k+1])                   #sum of frequencies (y) from populationA
+        popBCount = sum(y[k+1:])                    #sum of frequencies (y) from populationB
     
         popAMean = popASum/popACount
         try:                                  #to avoid the zerodivisionerror that was poping up 
@@ -218,7 +217,7 @@ def CCA_SIED(data_xarray):
     
     """
     This function applies the Cayula-Cornillon Algorithm Single Image Edge Detector (CCA_SIED) to a single image
-    with data from an xaray in which the CCA_SIED will be applied.
+    with data from an xarray.
     For a single image, the function return the fronts coordinates (x,y) points 
     """
     #start_algorithm = time()
