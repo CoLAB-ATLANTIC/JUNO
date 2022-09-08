@@ -186,7 +186,7 @@ def CCA_front(df, day_txt, base_path):
     
     front = np.zeros((361, 505))        #initialize a matrix of zeros. This shape is for the CMEMS Forecats data
         
-    xdata_final, ydata_final = CayulaCornillon_df.CCA_SIED(df)       
+    xdata_final, ydata_final = CayulaCornillon_df.CCA_SIED(df, shape=(361, 505))       
     
     cols_x = np.array([])
     for value in xdata_final:                     #convert values in array x to the respective index in a (1001, 1401) matrix
