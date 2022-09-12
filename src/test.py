@@ -285,7 +285,7 @@ def main():
         
     
     nc_file = os.getcwd()
-    nc_file = os.path.join('JUNO/data/MUR_daily_fronts_netcdf/' + day_txt + '.nc')
+    nc_file = os.path.join('JUNO/data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')
 
     ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
 
