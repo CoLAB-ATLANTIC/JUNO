@@ -155,6 +155,8 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     mask_dilated = cv2.dilate(mask255, kernel)
     canny_front =np.ma.masked_where(mask_dilated==255, canny)   #Mask an array where a condition is True
     
+    canny_front = np.flipud(canny_front) 
+    
     return canny_front
     
 
@@ -181,6 +183,8 @@ def BOA_aplication(df):
     boa_front = BOA.boa(lon=lon, lat=lat, ingrid=ingrid, nodata = np.nan, direction = False)
     boa_front = np.flip(boa_front, axis=0)
     boa_front = np.array([[boa_front[j][i] for j in range(len(boa_front))] for i in range(len(boa_front[0])-1,-1,-1)])
+    
+    boa_front = np.flipud(boa_front) 
     
     return boa_front
 
@@ -229,7 +233,9 @@ def CCA_front(df):
     #Make a dilation to ensure the pixels that belong to the shore are not consideredd fronts
     kernel = np.ones((3,3), np.uint8)
     mask_dilated = cv2.dilate(mask255, kernel)
-    cca_front = np.ma.masked_where(mask_dilated==255, front)   
+    cca_front = np.ma.masked_where(mask_dilated==255, front)  
+    
+    cca_front = np.flipud(cca_front) 
     
     return cca_front
     
@@ -245,7 +251,7 @@ def real_sst_image(df):
     """
     
     sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').T.values
-    sst = np.flipud(sst)
+    #sst = np.flipud(sst)
     
     return sst
  
