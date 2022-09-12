@@ -155,6 +155,8 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     mask_dilated = cv2.dilate(mask255, kernel)
     canny_front =np.ma.masked_where(mask_dilated==255, canny)   #Mask an array where a condition is True
     
+    canny_front[canny_front == 255] = np.nan
+    
     canny_front = np.flipud(canny_front) 
     
     return canny_front
@@ -167,7 +169,7 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
 
 
 
-def BOA_aplication(df):  
+def BOA_aplication(df, threshold = 0.05):  
     
     """
     Function to, for a given dataframe with a longitude, latitude and SST columns, 
@@ -184,7 +186,24 @@ def BOA_aplication(df):
     boa_front = np.flip(boa_front, axis=0)
     boa_front = np.array([[boa_front[j][i] for j in range(len(boa_front))] for i in range(len(boa_front[0])-1,-1,-1)])
     
+    
+    #Create a masked_array in order to get the continental zone well defined
+    #Convert some df to a numpy array with the SST values for each value of longitude and latitude
+    sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').T.values   
+    mask = np.isnan(np.flipud(sst))       #Boolean array=True where array Temp had Null values (continental zone)
+    mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which pixels = 255 when mask=True 
+    #Make a dilation to ensure the pixels that belong to the shore are not consideredd fronts
+    kernel = np.ones((3,3), np.uint8)
+    mask_dilated = cv2.dilate(mask255, kernel)
+    boa_front = np.ma.masked_where(mask_dilated==255, boa_front)  
+    
+    boa_front[boa_front == 255] = np.nan
+    
     boa_front = np.flipud(boa_front) 
+    
+    boa_front = np.where(boa_front>=threshold, 1, boa_front)    
+    boa_front = np.where(boa_front<threshold, 0, boa_front)
+
     
     return boa_front
 
@@ -237,6 +256,8 @@ def CCA_front(df):
     
     cca_front = np.flipud(cca_front) 
     
+    cca_front[cca_front == 255] = np.nan
+    
     return cca_front
     
     ##########################################################################################################################################
@@ -277,7 +298,7 @@ def main():
     
     canny_front = canny_front_detection_1day(df_yesterday_mur)
     
-    boa_front = BOA_aplication(df_yesterday_mur)
+    boa_front = BOA_aplication(df_yesterday_mur, threshold=0.05)
     
     cca_front = CCA_front(df_yesterday_mur)
         
@@ -318,7 +339,7 @@ def main():
     
     boa = ds.createVariable('boa', 'f4', ('time', 'lat', 'lon',))
     boa.units = 'Unknown'
-    boa.description = 'Array with identyfied fronts through the Belkin O Reilly Algorithm'
+    boa.description = 'Array with identyfied fronts through the Belkin O Reilly Algorithm (temperature gradient). If the gradient is bigger than certain threshold is considered front (1)'
     boa[0, :, :] = boa_front
     
     cca = ds.createVariable('cca', 'u1', ('time', 'lat', 'lon',))
