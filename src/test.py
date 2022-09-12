@@ -300,17 +300,17 @@ def main():
     lats = ds.createVariable('lat', 'f4', ('lat', ))
     lons = ds.createVariable('lon', 'f4', ('lon', ))
 
-    sst = ds.createVariable('sst', 'f4', ('time', 'lat', 'lon',))
-    sst.units = 'C'   #degrees Celsius
-    sst.description = 'Array with the Sea-Surface Temperature (SST) relative to the MUR data for that day'
-    sst[0, :, :] = sst
+    sst_analyzed = ds.createVariable('sst', 'f4', ('time', 'lat', 'lon',))
+    sst_analyzed.units = 'C'   #degrees Celsius
+    sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the MUR data for that day'
+    sst_analyzed[0, :, :] = sst
     
     canny = ds.createVariable('canny', 'u1', ('time', 'lat', 'lon',))
     canny.units = 'Unknown'
     canny.description = 'Binary Array with identyfied fronts through Canny from OpenCV (1-> front), (0->not front)'
     canny[0, :, :] = canny_front
     
-    boa = ds.createVariable('boa', 'u1', ('time', 'lat', 'lon',))
+    boa = ds.createVariable('boa', 'f4', ('time', 'lat', 'lon',))
     boa.units = 'Unknown'
     boa.description = 'Array with identyfied fronts through the Belkin O Reilly Algorithm'
     boa[0, :, :] = boa_front
