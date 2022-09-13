@@ -146,6 +146,8 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     
     #apply the canny algorithm and plot the image with the edges
     canny = cv2.Canny(sst_final, thresh_min, thresh_max, apertureSize=apertureSize, L2gradient=False)
+    
+    canny[canny == 255] = 1
 
     #Apply a mask for the continental zone:
     mask = np.isnan(np.flipud(sst))    #Boolean array: True where array Temp had Null Values (correspond to the continental zone)
@@ -154,8 +156,6 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     kernel = np.ones((3,3), np.uint8)
     mask_dilated = cv2.dilate(mask255, kernel)
     canny_front =np.ma.masked_where(mask_dilated==255, canny)   #Mask an array where a condition is True
-    
-    canny_front[canny_front == 255] = 1
     
     canny_front = np.flipud(canny_front) 
     
@@ -186,23 +186,24 @@ def BOA_aplication(df, threshold = 0.05):
     boa_front = np.flip(boa_front, axis=0)
     boa_front = np.array([[boa_front[j][i] for j in range(len(boa_front))] for i in range(len(boa_front[0])-1,-1,-1)])
     
+    boa_front = np.where(boa_front>=threshold, 1, boa_front)    
+    boa_front = np.where(boa_front<threshold, 0, boa_front)
+
+    
     
     #Create a masked_array in order to get the continental zone well defined
     #Convert some df to a numpy array with the SST values for each value of longitude and latitude
-    sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').T.values   
-    mask = np.isnan(np.flipud(sst))       #Boolean array=True where array Temp had Null values (continental zone)
-    mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which pixels = 255 when mask=True 
+    #sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').T.values   
+    #mask = np.isnan(np.flipud(sst))       #Boolean array=True where array Temp had Null values (continental zone)
+    #mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which pixels = 255 when mask=True 
     #Make a dilation to ensure the pixels that belong to the shore are not consideredd fronts
-    kernel = np.ones((3,3), np.uint8)
-    mask_dilated = cv2.dilate(mask255, kernel)
-    boa_front = np.ma.masked_where(mask_dilated==255, boa_front)  
+    #kernel = np.ones((3,3), np.uint8)
+    #mask_dilated = cv2.dilate(mask255, kernel)
+    #boa_front = np.ma.masked_where(mask_dilated==255, boa_front)  
     
     #boa_front[boa_front == 255] = np.nan
     
     boa_front = np.flipud(boa_front) 
-    
-    boa_front = np.where(boa_front>=threshold, 1, boa_front)    
-    boa_front = np.where(boa_front<threshold, 0, boa_front)
 
     
     return boa_front
