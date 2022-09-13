@@ -157,7 +157,7 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     #mask_dilated = cv2.dilate(mask255, kernel)
     #canny_front =np.ma.masked_where(mask_dilated==255, canny)   #Mask an array where a condition is True
     
-    canny_front = np.flipud(canny_front) 
+    canny_front = np.flipud(canny) 
     
     return canny_front
     
