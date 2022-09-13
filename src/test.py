@@ -155,9 +155,9 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     mask = np.isnan(np.flipud(sst))    #Boolean array: True where array Temp had Null Values (correspond to the continental zone)
     #mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which values= 255 when mask=True
     #Dilation to ensure that the pixels that belong to the "shore/continental zone" are not considered fronts 
-    #kernel = np.ones((3,3), np.uint8)
-    #mask_dilated = cv2.dilate(mask, kernel)
-    canny_front = np.ma.masked_array(canny, mask)   #Mask an array where a condition is True
+    kernel = np.ones((3,3), np.uint8)
+    mask_dilated = cv2.dilate(mask, kernel)
+    canny_front = np.ma.masked_array(canny, mask_dilated)   #Mask an array where a condition is True
     
     
     canny_front = np.flipud(canny_front) 
@@ -201,9 +201,9 @@ def BOA_aplication(df, threshold = 0.05):
     mask = np.isnan(np.flipud(sst))       #Boolean array=True where array Temp had Null values (continental zone)
     #mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which pixels = 255 when mask=True 
     #Make a dilation to ensure the pixels that belong to the shore are not consideredd fronts
-    #kernel = np.ones((3,3), np.uint8)
-    #mask_dilated = cv2.dilate(mask255, kernel)
-    boa_front = np.ma.masked_array(boa_front, mask)  
+    kernel = np.ones((3,3), np.uint8)
+    mask_dilated = cv2.dilate(mask, kernel)
+    boa_front = np.ma.masked_array(boa_front, mask_dilated)  
     
     boa_front = np.flipud(boa_front) 
 
@@ -252,9 +252,9 @@ def CCA_front(df):
     mask = np.isnan(np.flipud(sst))       #Boolean array=True where array Temp had Null values (continental zone)
     #mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which pixels = 255 when mask=True 
     #Make a dilation to ensure the pixels that belong to the shore are not consideredd fronts
-    #kernel = np.ones((3,3), np.uint8)
-    #mask_dilated = cv2.dilate(mask255, kernel)
-    cca_front = np.ma.masked_array(front, mask)  
+    kernel = np.ones((3,3), np.uint8)
+    mask_dilated = cv2.dilate(mask, kernel)
+    cca_front = np.ma.masked_array(front, mask_dilated)  
     
     cca_front = np.flipud(cca_front) 
     
