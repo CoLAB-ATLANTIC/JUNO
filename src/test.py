@@ -147,18 +147,19 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     #apply the canny algorithm and plot the image with the edges
     canny = cv2.Canny(sst_final, thresh_min, thresh_max, apertureSize=apertureSize, L2gradient=False)
     
+    canny_front[canny_front == 255] = 1
+    
 
     #Apply a mask for the continental zone:
     mask = np.isnan(np.flipud(sst))    #Boolean array: True where array Temp had Null Values (correspond to the continental zone)
-    mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which values= 255 when mask=True
+    #mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which values= 255 when mask=True
     #Dilation to ensure that the pixels that belong to the "shore/continental zone" are not considered fronts 
-    kernel = np.ones((3,3), np.uint8)
-    mask_dilated = cv2.dilate(mask255, kernel)
-    canny_front = np.ma.masked_where(mask_dilated==255, canny)   #Mask an array where a condition is True
+    #kernel = np.ones((3,3), np.uint8)
+    #mask_dilated = cv2.dilate(mask, kernel)
+    canny_front = np.ma.masked_array(canny, mask)   #Mask an array where a condition is True
     
     canny_front = np.flipud(canny_front) 
     
-    canny_front[canny_front == 255] = 1
     
     return canny_front
     
