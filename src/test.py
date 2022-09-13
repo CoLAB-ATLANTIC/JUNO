@@ -344,7 +344,7 @@ def main():
     boa.description = 'Array with identyfied fronts through the Belkin O Reilly Algorithm (temperature gradient). If the gradient is bigger than certain threshold is considered front (1)'
     boa[0, :, :] = boa_front
     
-    cca = ds.createVariable('cca', 'u1', ('time', 'lat', 'lon',))
+    cca = ds.createVariable('cca', 'f4', ('time', 'lat', 'lon',))
     cca.units = 'Unknown'
     cca.description = 'Binary Array with identyfied fronts through the Cayula Cornillon Algorithm (1->front) (0->not front)'
     cca[0, :, :] = cca_front.astype(float)
