@@ -347,7 +347,7 @@ def main():
     cca = ds.createVariable('cca', 'u1', ('time', 'lat', 'lon',))
     cca.units = 'Unknown'
     cca.description = 'Binary Array with identyfied fronts through the Cayula Cornillon Algorithm (1->front) (0->not front)'
-    cca[0, :, :] = cca_front
+    cca[0, :, :] = cca_front.astype(float)
     
     times.units = 'days since 1-1-1'
 
