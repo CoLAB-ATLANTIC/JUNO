@@ -139,7 +139,7 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').T.values
     #Convert Temperature values to uint8 format with values in the range of 0-255
     sst_final = ((sst - np.nanmin(sst)) * (1/(np.nanmax(sst) - np.nanmin(sst)) * 255)).astype('uint8')
-    #sst_final = np.flipud(sst_final)   #flipud -> Reverse the order of elements along axis 0 (up/down).
+    sst_final = np.flipud(sst_final)   #flipud -> Reverse the order of elements along axis 0 (up/down).
     #in case we want to apply a gaussian filter with a certain sigma value (by default is 0)
     sst_final = gaussian_filter(sst_final, sigma=sigma)   
 
@@ -150,16 +150,16 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     canny[canny == 255] = 1
 
     #Apply a mask for the continental zone:
-    mask = np.isnan(np.flipud(sst))    #Boolean array: True where array Temp had Null Values (correspond to the continental zone)
-    mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which values= 255 when mask=True
+    #mask = np.isnan(np.flipud(sst))    #Boolean array: True where array Temp had Null Values (correspond to the continental zone)
+    #mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which values= 255 when mask=True
     #Dilation to ensure that the pixels that belong to the "shore/continental zone" are not considered fronts 
-    kernel = np.ones((3,3), np.uint8)
-    mask_dilated = cv2.dilate(mask255, kernel)
-    canny_front =np.ma.masked_where(mask_dilated==255, canny)   #Mask an array where a condition is True
+    #kernel = np.ones((3,3), np.uint8)
+    #mask_dilated = cv2.dilate(mask255, kernel)
+    #canny_front =np.ma.masked_where(mask_dilated==255, canny)   #Mask an array where a condition is True
     
-    canny_front = np.flipud(canny_front) 
+    #canny_front = np.flipud(canny_front) 
     
-    return canny_front
+    return canny
     
 
 
