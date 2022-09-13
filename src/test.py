@@ -147,7 +147,7 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     #apply the canny algorithm and plot the image with the edges
     canny = cv2.Canny(sst_final, thresh_min, thresh_max, apertureSize=apertureSize, L2gradient=False)
     
-    #canny[canny == 255] = 1
+    canny[canny == 255] = 1
 
     #Apply a mask for the continental zone:
     mask = np.isnan(np.flipud(sst))    #Boolean array: True where array Temp had Null Values (correspond to the continental zone)
@@ -257,7 +257,7 @@ def CCA_front(df):
     
     cca_front = np.flipud(cca_front) 
     
-    #cca_front[cca_front == 255] = 1
+    cca_front[cca_front == 255] = 1
     
     return cca_front
     
