@@ -149,6 +149,7 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     
     canny[canny == 255] = 1
     
+    
 
     #Apply a mask for the continental zone:
     mask = np.isnan(np.flipud(sst))    #Boolean array: True where array Temp had Null Values (correspond to the continental zone)
@@ -157,6 +158,8 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     #kernel = np.ones((3,3), np.uint8)
     #mask_dilated = cv2.dilate(mask, kernel)
     canny_front = np.ma.masked_array(canny, mask)   #Mask an array where a condition is True
+    
+    canny.astype('float32')
     
     canny_front = np.flipud(canny_front) 
     
