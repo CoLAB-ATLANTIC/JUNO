@@ -159,7 +159,6 @@ def canny_front_detection_1day(df, thresh_min=120, thresh_max=220, apertureSize=
     #mask_dilated = cv2.dilate(mask, kernel)
     canny_front = np.ma.masked_array(canny, mask)   #Mask an array where a condition is True
     
-    canny.astype('float32')
     
     canny_front = np.flipud(canny_front) 
     
@@ -198,19 +197,16 @@ def BOA_aplication(df, threshold = 0.05):
     
     #Create a masked_array in order to get the continental zone well defined
     #Convert some df to a numpy array with the SST values for each value of longitude and latitude
-    #sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').T.values   
-    #mask = np.isnan(np.flipud(sst))       #Boolean array=True where array Temp had Null values (continental zone)
+    sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').T.values   
+    mask = np.isnan(np.flipud(sst))       #Boolean array=True where array Temp had Null values (continental zone)
     #mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which pixels = 255 when mask=True 
     #Make a dilation to ensure the pixels that belong to the shore are not consideredd fronts
     #kernel = np.ones((3,3), np.uint8)
     #mask_dilated = cv2.dilate(mask255, kernel)
-    #boa_front = np.ma.masked_where(mask_dilated==255, boa_front)  
-    
-    #boa_front[boa_front == 255] = np.nan
+    boa_front = np.ma.masked_array(boa_front, mask)  
     
     boa_front = np.flipud(boa_front) 
 
-    
     return boa_front
 
 
@@ -254,11 +250,11 @@ def CCA_front(df):
     #Convert some df to a numpy array with the SST values for each value of longitude and latitude
     sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').T.values   
     mask = np.isnan(np.flipud(sst))       #Boolean array=True where array Temp had Null values (continental zone)
-    mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which pixels = 255 when mask=True 
+    #mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which pixels = 255 when mask=True 
     #Make a dilation to ensure the pixels that belong to the shore are not consideredd fronts
-    kernel = np.ones((3,3), np.uint8)
-    mask_dilated = cv2.dilate(mask255, kernel)
-    cca_front = np.ma.masked_where(mask_dilated==255, front)  
+    #kernel = np.ones((3,3), np.uint8)
+    #mask_dilated = cv2.dilate(mask255, kernel)
+    cca_front = np.ma.masked_array(front, mask)  
     
     cca_front = np.flipud(cca_front) 
     
@@ -337,11 +333,11 @@ def main():
     sst_analyzed.units = 'C'   #degrees Celsius
     sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the MUR data for that day'
     sst_analyzed[0, :, :] = sst
-    
-    canny = ds.createVariable('canny', 'u1', ('time', 'lat', 'lon',))
+
+    canny = ds.createVariable('canny', 'f4', ('time', 'lat', 'lon',))
     canny.units = 'Unknown'
     canny.description = 'Binary Array with identyfied fronts through Canny from OpenCV (1-> front), (0->not front)'
-    canny[0, :, :] = canny_front
+    canny[0, :, :] = canny_front.astype(float)
     
     boa = ds.createVariable('boa', 'f4', ('time', 'lat', 'lon',))
     boa.units = 'Unknown'
