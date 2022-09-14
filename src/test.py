@@ -348,7 +348,7 @@ def main():
     lons[:] = np.linspace(-19, -5, 505)
    
    
-    date_obj = datetime.datetime.strptime(day_txt, '%Y%m%d')
+    date_obj = datetime.datetime.strptime(day_txt, '%Y-%m-%d')
     date_time = date_obj.toordinal()
     times[:] = date_time
 
