@@ -271,13 +271,14 @@ def CCA_front(data_xarray):
     ################################# GET THE REAL SST IMAGE FROM THE CMEMS FORECAST DATASET ##############################################
     
     
-def real_sst_image(df):
+def real_sst_image(data_xarray):
         
     """
     Function to store the real sst image
     """
     
-    sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').T.values
+    sst = np.array(data_xarray['analysed_sst'])
+    sst = np.squeeze(sst)
     
     return sst
  
