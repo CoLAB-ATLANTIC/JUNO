@@ -100,7 +100,7 @@ def download_sst(path, date, mur_j0, mur_j1, mur_i0, mur_i1, replace):
 
 ######################################### IMPORT DATA #######################################################
 
-def get_data(base_path, data):
+def get_data(data, base_path):
     
     """
     Function to get our netCDF file that is stored in the data directory inside the MUR_seasonal_data folder and convert it to a dataframe.
@@ -298,15 +298,15 @@ def main():
     download_sst(path = os.path.join(base_path, 'data/MUR_daily_data/'), date = pd.to_datetime(day_txt), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
             
     
-    df_yesterday_mur = get_data('sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
+    xarray_mur = get_data('sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
     
-    canny_front = canny_front_detection_1day(df_yesterday_mur)
+    canny_front = canny_front_detection_1day(xarray_mur)
     
-    boa_front = BOA_aplication(df_yesterday_mur, threshold=0.05)
+    boa_front = BOA_aplication(xarray_mur, threshold=0.05)
     
-    cca_front = CCA_front(df_yesterday_mur)
+    cca_front = CCA_front(xarray_mur)
         
-    sst = real_sst_image(df_yesterday_mur)
+    sst = real_sst_image(xarray_mur)
     
     
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
