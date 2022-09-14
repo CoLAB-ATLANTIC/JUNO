@@ -79,6 +79,9 @@ def get_data(data, base_path):
     nc_path = os.path.join(data_folder, data)
     data_xarray = xr.load_dataset(nc_path)
     
+    #para estarem todos com a mesma nomenclatura usada o CCA_SIED do script CayulaCornillon_xarray.py
+    data_xarray = data_xarray.rename({'latitude':'lat', 'longitude':'lon', 'thetao':'analysed_sst'})
+    
     return data_xarray
 
 
@@ -94,7 +97,7 @@ def canny_front_detection_1day(data_xarray, thresh_min=120, thresh_max=220, aper
     """
     
     #Get the sst array in the right shape
-    sst = np.array(data_xarray['thetao'])
+    sst = np.array(data_xarray['analysed_sst'])
     sst = np.squeeze(sst)
     #Convert Temperature values to uint8 format with values in the range of 0-255
     sst_final = ((sst - np.nanmin(sst)) * (1/(np.nanmax(sst) - np.nanmin(sst)) * 255)).astype('uint8')
@@ -135,9 +138,9 @@ def BOA_aplication(data_xarray, threshold = 0.05):
     (if the pixel value is greater than the threshold, then it is considered a front, otherwise don't). 
     """
     
-    lon = np.array(data_xarray['longitude']).astype('float64')
-    lat = np.array(data_xarray['latitude']).astype('float64')
-    ingrid = np.array(data_xarray['thetao'])
+    lon = np.array(data_xarray['lon']).astype('float64')
+    lat = np.array(data_xarray['lat']).astype('float64')
+    ingrid = np.array(data_xarray['analysed_sst'])
     ingrid = np.squeeze(ingrid)
     
     
@@ -206,7 +209,7 @@ def CCA_front(data_xarray):
     #Create a masked_array in order to get the continental zone well defined
     
     #Convert some df to a numpy array with the SST values for each value of longitude and latitude
-    sst = np.array(data_xarray['thetao'])
+    sst = np.array(data_xarray['analysed_sst'])
     sst = np.squeeze(sst)
     mask = np.isnan(np.flipud(sst))       #Boolean array=True where array Temp had Null values (continental zone)
     mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which pixels = 255 when mask=True 
@@ -231,7 +234,7 @@ def real_sst_image(data_xarray):
     Function to store the real sst image
     """
     
-    sst = np.array(data_xarray['thetao'])
+    sst = np.array(data_xarray['analysed_sst'])
     sst = np.squeeze(sst)
     
     return sst
@@ -308,7 +311,7 @@ def main():
 
     ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
 
-    ds.title = 'MUR ' + day_txt + ' Fronts Arrays (Xarrays)'
+    ds.title = 'CMEMS_Forecast ' + day_txt + ' Fronts Arrays (Xarrays)'
 
     #create dimensions of the NetCDF file
     time = ds.createDimension('time')
@@ -321,7 +324,7 @@ def main():
 
     sst_analyzed = ds.createVariable('sst', 'f4', ('time', 'lat', 'lon',))
     sst_analyzed.units = 'C'   #degrees Celsius
-    sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the MUR data for that day'
+    sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the CMEMS Forecast data for that day'
     sst_analyzed[0, :, :] = sst
 
     canny = ds.createVariable('Canny', 'f4', ('time', 'lat', 'lon',))
