@@ -292,13 +292,13 @@ def main():
   
     xarray_cmems_forecast = get_data('CMEMS_forecast_' + day_txt + '.nc', base_path=base_path)
     
-    canny_front = canny_front_detection_1day(xarray_cmems_forecast, day_txt, base_path=base_path)
+    canny_front = canny_front_detection_1day(xarray_cmems_forecast)
     
-    boa_front = BOA_aplication(xarray_cmems_forecast, day_txt, base_path=base_path)
+    boa_front = BOA_aplication(xarray_cmems_forecast, threshold=0.05)
     
-    cca_front = CCA_front(xarray_cmems_forecast, day_txt, base_path=base_path)
+    cca_front = CCA_front(xarray_cmems_forecast)
         
-    sst = real_sst_image(xarray_cmems_forecast, day_txt, base_path=base_path)
+    sst = real_sst_image(xarray_cmems_forecast)
     
     
     ################################################### CREATION OF THE NETCDF   #######################################################
