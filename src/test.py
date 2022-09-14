@@ -74,7 +74,7 @@ def get_data(data, base_path):
     """
     
     base_path = base_path
-    data_folder = os.path.join(base_path, "data/MUR_daily_data")  
+    data_folder = os.path.join(base_path, "data/CMEMS_forecast_daily_data")  
     
     nc_path = os.path.join(data_folder, data)
     data_xarray = xr.load_dataset(nc_path)
@@ -87,7 +87,7 @@ def get_data(data, base_path):
 def canny_front_detection_1day(data_xarray, thresh_min=120, thresh_max=220, apertureSize=5, sigma=5):
     
     """
-    This function receives a dataframe with MUR data for a individual day and returns the array 
+    This function receives a dataframe with CMEMS Forecast data for a individual day and returns the array 
     that result from the aplication of the Canny Algorithm from OpenCV. 
     For visualization purposes, one can change the minimum and maximum threshold.
     One can also apply a gaussian filter with a certain sigma value to reduce noise of the image.
@@ -237,6 +237,7 @@ def real_sst_image(data_xarray):
     return sst
     
     
+######################################################   MAIN   ################################################################################
 
 def main():
     
