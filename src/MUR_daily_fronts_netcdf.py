@@ -314,8 +314,10 @@ def main():
     if not exist_path:                                                                         #if doesn't exist
         os.makedirs(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))                # create the folder
         
+        
+        
+    ################################################### CREATION OF THE NETCDF   #######################################################
 
-    
     nc_file = os.getcwd()
     nc_file = os.path.join(nc_file, 'projects/JUNO/data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')
 
