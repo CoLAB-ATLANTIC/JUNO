@@ -298,7 +298,7 @@ def main():
     download_sst(path = os.path.join(base_path, 'data/MUR_daily_data/'), date = pd.to_datetime(day_txt), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
             
     
-    xarray_mur = get_data('sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
+    xarray_mur = get_data(data = 'sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
     
     canny_front = canny_front_detection_1day(xarray_mur)
     
