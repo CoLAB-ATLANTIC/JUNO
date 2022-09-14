@@ -108,7 +108,7 @@ def get_data(data, base_path):
     """
     
     base_path = base_path
-    data_folder = os.path.join(base_path, "data/MUR_single_days")  
+    data_folder = os.path.join(base_path, "data/MUR_daily_data")  
     
     nc_path = os.path.join(data_folder, data)
     data_xarray = xr.load_dataset(nc_path)
