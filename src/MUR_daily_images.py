@@ -306,7 +306,7 @@ def real_sst_image(data_xarray, day_txt, base_path):
     plt.figure()
     plt.imshow(sst, cmocean.cm.thermal, extent = [lon[0], lon[-1], lat[0], lat[-1]])
     plt.title("Real SST Image (CMEMS Forecast) " + day_txt, fontsize=12)
-    plt.savefig(os.path.join(base_path,'data/CMEMS_forecast_daily_images/RealSST_' + day_txt+'.jpg'))
+    plt.savefig(os.path.join(base_path,'data/MUR_algorithm_daily_images/RealSST_' + day_txt+'.jpg'))
         
 
 
