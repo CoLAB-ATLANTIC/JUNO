@@ -1,7 +1,12 @@
 
-# This script downloads MUR data individually, i.e. it allows you to define a time period and then download the data for all the days in that period. 
-# These netCDF files are stored in folder: MUR_single_days
 
+############################################ download_mur_data_single_days.py  ##############################################
+###                                                                                                                       ###
+###    This script downloads MUR data individually, i.e.                                                                  ###
+###    (it allows you to define a time period and then download the data for all the days in that period).                ###
+###    These netCDF files are stored in folder: MUR_single_days                                                           ###
+###                                                                                                                       ###
+#############################################################################################################################
 
 import os
 import numpy as np

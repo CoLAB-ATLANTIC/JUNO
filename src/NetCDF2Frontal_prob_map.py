@@ -1,7 +1,12 @@
 
-#This script allows us to get the data from the NetCDF file with the CCA fronts numpy arrays and
-# calculate the frontal probability array for a given period. 
-# The result is an image (CCA) with the frontal probabilities for that period stored in the MUR_seasonal_images folder
+
+################################################### NetCDF2Frontal_prob_map.py  #############################################
+###                                                                                                                       ###
+###    This script allows us to get the data from the NetCDF file with the CCA fronts numpy arrays                        ###
+###    And calculate the frontal probability array for a given period.                                                    ###
+###    Result is an image (CCA) with the frontal proba for that period, stored in the MUR_seasonal_images folder          ###
+###                                                                                                                       ###
+#############################################################################################################################
 
 #Import libraries
 import numpy as np

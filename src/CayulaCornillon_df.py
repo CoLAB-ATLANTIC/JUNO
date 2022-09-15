@@ -1,7 +1,11 @@
 
-# Script with the necessary functions to apply the Cayula Cornillon Algorithm.
-# This script was profilled in order to maximize speed and efficiency
-# In this script the function CCA_SIED has an dataframe as argument (instead of an xarray used in the CayulaCornillon_xarray.py script)
+################################################### CayulaCornillon_df.py  ################################################
+###                                                                                                                         ###
+###    Script with the necessary functions to apply the Cayula Cornillon Algorithm.                                         ###
+###    This script was profilled in order to maximize speed and efficiency                                                  ###
+###    The function CCA_SIED has an dataframe as argument (instead of a xarray used in CayulaCornillon_xarray.py)           ###
+###                                                                                                                         ###
+###############################################################################################################################
 
 
 #Import Libraries

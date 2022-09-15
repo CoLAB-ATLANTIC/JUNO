@@ -1,7 +1,12 @@
 
-# SCRIPT to get the numpy arrays of fronts related to the Cayula Cornillon Algorithm (stored in the MUR_daily_fronts_npy folder)
-# and use them to create a netCDF file with all that data
-# With this netCDF we are going to be able to easily calculate a frontal probabilites of the CCA for a given period
+
+################################################### front_arrays2NetCDF.py  #################################################
+###                                                                                                                       ###
+###    SCRIPT to get the np arrays of fronts related to the CCA (stored in the MUR_daily_fronts_npy folder)               ###
+###    And use them to create a netCDF file with all those data arrays                                                    ###
+###    With this netCDF we are able to easily calculate a frontal probabilites of the CCA for a given period              ###
+###                                                                                                                       ###
+#############################################################################################################################
 
 #Import Libraries
 

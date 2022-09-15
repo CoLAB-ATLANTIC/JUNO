@@ -1,6 +1,6 @@
 ################################################### MUR_daily_fronts_netcdf.py  #############################################
 ###                                                                                                                       ###
-###    In this script the MUR daily data is downloaded and stored in the MUR_daily_data folder.                           ###
+###    Through a cronjob the MUR daily data is downloaded and stored in the MUR_daily_data folder.                        ###
 ###    Then the 3 algorithms are applied to this data to get the image of the fronts (for the Canny, BOA and CCA)         ###
 ###    The 3 images plus the SST image are then storen in the MUR_algorithm_daily_images folder                           ###
 ###                                                                                                                       ###

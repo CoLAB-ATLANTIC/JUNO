@@ -1,8 +1,15 @@
-# this script allows you to define a time period and then download the MUR data for all the days in that period. 
-# The final result is a netCDF file with data for all periods.
-# These netCDF files are stored in folder: MUR_seasonal_data
 
 
+################################################### download_seasonal_mur_data.py  ##########################################
+###                                                                                                                       ###
+###    This script allows you to define a time period and then download the MUR data for all the days in that period.     ###
+###    The final result is a netCDF file with data for all periods.                                                       ###
+###    # These netCDF files are stored in folder: MUR_seasonal_data                                                       ###
+###                                                                                                                       ###
+#############################################################################################################################
+
+
+#Import libraries
 import os
 import numpy as np
 import pandas as pd

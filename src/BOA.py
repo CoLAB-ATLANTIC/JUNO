@@ -1,6 +1,6 @@
 
 
-################################################### CayulaCornillon_xarray.py  ##################################################
+######################################################### BOA.py  ###############################################################
 ###                                                                                                                           ###
 ###    IN THIS SCRIPT ARE DEFINED THE FUNCTIONS NEEDED TO IMPLEMENT THE BELKIN O'REILLY ALGORITHM (BOA)                       ###
 ###    The boa FUNCTION RECEIVES PARAMETERS SUCH AS LATITUDE, LONGITUDE, INGRID (SST grid), ...                               ###

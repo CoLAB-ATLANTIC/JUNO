@@ -1,7 +1,12 @@
 
-#The following script imports data from the MUR_single_days folder (that have netCDF files with all the days from 2012 to 2021)
-# Then it applies the Cayula-Cornillon Algorithm, which returns a numpy array of fronts for each of those single days
-# Then those numpy arrays are stored in a MUR_daily_fronts_npy folder
+
+################################################### CCA_fronts_array.py  ####################################################
+###                                                                                                                       ###
+###    imports data from the MUR_single_days folder (that have netCDF files with all the days from 2012 to 2021)          ###
+###    Then applies the Cayula-Cornillon Algorithm, which returns a np array of fronts for each of the single days        ###
+###    Then those numpy arrays are stored in a MUR_daily_fronts_npy folder                                                ###
+###                                                                                                                       ###
+#############################################################################################################################
 
 
 #Import Libraries
