@@ -248,7 +248,7 @@ def main():
         
     ################################################### CREATION OF THE NETCDF   #######################################################
 
-        nc_file = os.path.join(nc_file, 'data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')
+        nc_file = os.path.join(base_path, 'data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')
 
         ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
 
