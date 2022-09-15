@@ -1,7 +1,13 @@
 
-# Script that through a cron job downloads the daily data from the CMEMS Forecast (with 2 days delay but that can be changed), 
-# and saves them as a .nc file in the data folder: CMEMS_forecast_daily_data. 
-# Then it fetches this data and applies the 3 algorithms to it. (The data is used in dataframe format instead of x_array)
+
+################################################### CMEMS_daily_fronts_netcdf.py  ##################################################
+###                                                                                                                              ###
+###    Through a cron job downloads the daily data from the CMEMS Forecast (with 2 days delay but that can be changed)           ###
+###    and saves them as a .nc file in the data folder: CMEMS_forecast_daily_data.                                               ###
+###    Then it fetches this data and applies the 3 algorithms to it. (The data is in x_array format)                             ###
+###                                                                                                                              ###
+####################################################################################################################################
+
 
 
 import motuclient
@@ -19,7 +25,7 @@ import cmocean
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
 import BOA
-import CayulaCornillon_df    #CayulaCornillon after making some profiling changes to improve efficiency
+import CayulaCornillon_xarray    #CayulaCornillon after making some profiling changes to improve efficiency
 
 
 ################################################## DOWNLOAD CMEMS_REANALYSIS DATA #####################################################
@@ -69,25 +75,25 @@ def motu_option_parser(script_template, usr, pwd, output_filename, output_direct
 def get_data(data, base_path):
     
     """
-    Function to get our netCDF file that is stored in the data directory and convert it to a dataframe.
+    Function to get our netCDF file that is stored in the data directory inside the MUR_seasonal_data folder and convert it to a dataframe.
     The data parameter is the string name of the netCDF file we want to import
     """
     
     base_path = base_path
-    data_folder = os.path.join(base_path, "data/CMEMS_forecast_daily_data")           
+    data_folder = os.path.join(base_path, "data/CMEMS_forecast_daily_data")  
     
     nc_path = os.path.join(data_folder, data)
-    netCDF = xr.load_dataset(nc_path)
+    data_xarray = xr.load_dataset(nc_path)
     
-    df = netCDF.to_dataframe()
-    df = df.reset_index() 
-        
-    return df
+    #para estarem todos com a mesma nomenclatura usada o CCA_SIED do script CayulaCornillon_xarray.py
+    data_xarray = data_xarray.rename({'latitude':'lat', 'longitude':'lon', 'thetao':'analysed_sst'})
+    
+    return data_xarray
 
 
 #################################### CANNY ALGORITHM ##########################################################
 
-def canny_front_detection_1day(df, day_txt, base_path, thresh_min=120, thresh_max=220, apertureSize=5, sigma=5):
+def canny_front_detection_1day(data_xarray, day_txt, base_path, thresh_min=120, thresh_max=220, apertureSize=5, sigma=5):
     
     """
     This function receives a dataframe with MUR data for a individual day and plots the result
@@ -96,8 +102,8 @@ def canny_front_detection_1day(df, day_txt, base_path, thresh_min=120, thresh_ma
     One can also apply a gaussian filter with a certain sigma value to reduce noise of the image
     """
 
-    # Convert the df to a numpy array with the SST values for the coordinate pair (longitude and latitude)
-    sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').T.values
+    sst = np.array(data_xarray['analysed_sst'])
+    sst = np.squeeze(sst)
     #Convert Temperature values to uint8 format with values in the range of 0-255
     sst_final = ((sst - np.nanmin(sst)) * (1/(np.nanmax(sst) - np.nanmin(sst)) * 255)).astype('uint8')
     sst_final = np.flipud(sst_final)   #flipud -> Reverse the order of elements along axis 0 (up/down).
@@ -105,10 +111,8 @@ def canny_front_detection_1day(df, day_txt, base_path, thresh_min=120, thresh_ma
     sst_final = gaussian_filter(sst_final, sigma=sigma)   
 
     #to define the extent of the plot
-    lat = df['latitude'].to_numpy()   
-    lon = df['longitude'].to_numpy()
-    lat = np.unique(lat).round(3)
-    lon = np.unique(lon).round(3)
+    lon = np.array(data_xarray['lon']).astype('float64')
+    lat = np.array(data_xarray['lat']).astype('float64')
     
     #apply the canny algorithm and plot the image with the edges
     canny = cv2.Canny(sst_final, thresh_min, thresh_max, apertureSize=apertureSize, L2gradient=False)
@@ -140,7 +144,7 @@ def canny_front_detection_1day(df, day_txt, base_path, thresh_min=120, thresh_ma
 ################################### Belkin O'Reilly Algorithm ##########################################################
 
 
-def BOA_aplication(df, day_txt, base_path):  
+def BOA_aplication(data_xarray, day_txt, base_path):  
     
     """
     Function to, for a given dataframe with a longitude, latitude and SST columns, 
@@ -149,9 +153,10 @@ def BOA_aplication(df, day_txt, base_path):
     (if the pixel value is greater than the threshold, then it is considered a front, otherwise don't). 
     """
     
-    lat = np.array(df['latitude'].unique())
-    lon = np.array(df['longitude'].unique())
-    ingrid = np.array(df['thetao']).reshape(len(lat), len(lon))
+    lon = np.array(data_xarray['lon']).astype('float64')
+    lat = np.array(data_xarray['lat']).astype('float64')
+    ingrid = np.array(data_xarray['analysed_sst'])
+    ingrid = np.squeeze(ingrid)
     
     front = BOA.boa(lon=lon, lat=lat, ingrid=ingrid, nodata = np.nan, direction = False)
     front = np.flip(front, axis=0)
@@ -177,7 +182,7 @@ def BOA_aplication(df, day_txt, base_path):
 ################################## CAYULA-CORNILLON ALGORITHM #################################################################
     
 
-def CCA_front(df, day_txt, base_path): 
+def CCA_front(data_xarray, day_txt, base_path): 
     
     """
     This function receives a dataframe with MUR data for a individual day and plots the result
@@ -186,7 +191,7 @@ def CCA_front(df, day_txt, base_path):
     
     front = np.zeros((361, 505))        #initialize a matrix of zeros. This shape is for the CMEMS Forecats data
         
-    xdata_final, ydata_final = CayulaCornillon_df.CCA_SIED(df, shape=(361, 505))       
+    xdata_final, ydata_final = CayulaCornillon_xarray.CCA_SIED(data_xarray)       
     
     cols_x = np.array([])
     for value in xdata_final:                     #convert values in array x to the respective index in a (1001, 1401) matrix
@@ -207,9 +212,9 @@ def CCA_front(df, day_txt, base_path):
     front[front != 0] = 1
     
     #Create a masked_array in order to get the continental zone well defined
-    
-    #Convert some df to a numpy array with the SST values for each value of longitude and latitude
-    sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').T.values   
+      
+    sst = np.array(data_xarray['analysed_sst'])
+    sst = np.squeeze(sst)
     mask = np.isnan(np.flipud(sst))       #Boolean array=True where array Temp had Null values (continental zone)
     mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which pixels = 255 when mask=True 
     #Make a dilation to ensure the pixels that belong to the shore are not consideredd fronts
@@ -218,10 +223,9 @@ def CCA_front(df, day_txt, base_path):
     front = np.ma.masked_where(mask_dilated==255, front)   
     
     
-    lat = np.array(df['latitude'].unique())
-    lon = np.array(df['longitude'].unique())
-    lat = np.unique(lat).round(3)
-    lon = np.unique(lon).round(3)
+    #to define the extent of the plot
+    lon = np.array(data_xarray['lon']).astype('float64')
+    lat = np.array(data_xarray['lat']).astype('float64')
     
     #Visualization purposes: continenal area in gray, and pixels with value=0 in white   
     viridis = matplotlib.cm.get_cmap('viridis', 1)
@@ -242,19 +246,19 @@ def CCA_front(df, day_txt, base_path):
  ################################# GET THE REAL SST IMAGE FROM THE CMEMS FORECAST DATASET ##############################################
     
     
-def real_sst_image(df, day_txt, base_path):
+def real_sst_image(data_xarray, day_txt, base_path):
         
     """
     Function to store the real sst image
     """
-    
-    sst = df.pivot_table(index='longitude', columns='latitude', values='thetao').T.values
+
+    sst = np.array(data_xarray['analysed_sst'])
+    sst = np.squeeze(sst)
     sst = np.flipud(sst)
     
-    lat = np.array(df['latitude'].unique())
-    lon = np.array(df['longitude'].unique())
-    lat = np.unique(lat).round(3)
-    lon = np.unique(lon).round(3)
+    #to define the extent of the plot
+    lon = np.array(data_xarray['lon']).astype('float64')
+    lat = np.array(data_xarray['lat']).astype('float64')
     
     plt.figure()
     plt.imshow(sst, cmocean.cm.thermal, extent = [lon[0], lon[-1], lat[0], lat[-1]])
@@ -314,15 +318,15 @@ def main():
     if not exist_path:
         os.makedirs(os.path.join(base_path, 'data/CMEMS_forecast_daily_images'))
   
-    df_cmems_forecast = get_data('CMEMS_forecast_' + day_txt + '.nc', base_path=base_path)
+    xarray_cmems_forecast = get_data('CMEMS_forecast_' + day_txt + '.nc', base_path=base_path)
     
-    canny_front_detection_1day(df_cmems_forecast, day_txt, base_path=base_path)
+    canny_front_detection_1day(xarray_cmems_forecast, day_txt, base_path=base_path)
     
-    BOA_aplication(df_cmems_forecast, day_txt, base_path=base_path)
+    BOA_aplication(xarray_cmems_forecast, day_txt, base_path=base_path)
     
-    CCA_front(df_cmems_forecast, day_txt, base_path=base_path)
+    CCA_front(xarray_cmems_forecast, day_txt, base_path=base_path)
         
-    real_sst_image(df_cmems_forecast, day_txt, base_path=base_path)
+    real_sst_image(xarray_cmems_forecast, day_txt, base_path=base_path)
     
 
 if __name__ == "__main__":

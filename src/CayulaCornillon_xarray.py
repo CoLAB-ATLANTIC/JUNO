@@ -1,7 +1,13 @@
 
-# Script with the necessary functions to apply the Cayula Cornillon Algorithm. 
-# This script was profilled in order to maximize speed and efficiency
-# In this script the function CCA_SIED has an xarray as argument (instead of a dataframe used in the CayulaCornillon_df.py script)
+
+################################################### CayulaCornillon_xarray.py  ################################################
+###                                                                                                                         ###
+###    Script with the necessary functions to apply the Cayula Cornillon Algorithm.                                         ###
+###    This script was profilled in order to maximize speed and efficiency                                                  ###
+###    The function CCA_SIED has an xarray as argument (instead of a dataframe used in CayulaCornillon_df.py script)        ###
+###                                                                                                                         ###
+###############################################################################################################################
+
 
 
 #Import Libraries
@@ -233,7 +239,8 @@ def CCA_SIED(data_xarray):
     lat = Y.T
     lon = X.T
     
-    Z = data_xarray['analysed_sst'][0].values - 273.15
+    #Z = data_xarray['analysed_sst'][0].values - 273.15
+    Z = data_xarray['analysed_sst'][0].values
     
     head = np.array([lon_min, lon_max], dtype='float64')           
     head = np.append(head, [lat_min, lat_max])  

@@ -1,8 +1,11 @@
 
-# Script that through a cron job downloads the daily data from the CMEMS Forecast (with 2 days delay but that can be changed), 
-# and saves them as a .nc file in the data folder: CMEMS_forecast_daily_data. 
-# Then it fetches this data and applies the 3 algorithms to it. (The data is used in xarray format). 
-# The result is save in a daily NetCDF file
+################################################### CMEMS_daily_fronts_netcdf.py  #############################################
+###                                                                                                                         ###
+###    In this script the CMEMS Forecast daily data is downloaded and stored in the CMEMS_forecast_daily_data folder.       ###
+###    Then the 3 algorithms are applied to this data to get the arrays of fronts (for the Canny, BOA and CCA)              ###
+###    Then the 3 arrays plus the SST array are stored in a netCDF file int the CMEMS_daily_fronts_netcdf folder            ###
+###                                                                                                                         ###
+###############################################################################################################################
 
 
 import motuclient
