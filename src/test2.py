@@ -292,8 +292,8 @@ def main():
         lons[:] = np.linspace(-19, -5, 1401)
         
         
-        time = ds.variables['time'][:]
-        dates = num2date(time, ds.variables['time'].units)
+        date_obj = ds.variables['time'][:]
+        dates = num2date(date_obj, ds.variables['time'].units)
         
         
         #date_obj = datetime.datetime.strptime(day_txt+' 00:00:00', '%Y%m%d %H:%M:%S')
