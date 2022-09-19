@@ -26,6 +26,7 @@ import wget
 from math import floor
 from pydap.client import open_url
 import netCDF4 as nc
+from matplotlib.dates import date2num
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
@@ -223,8 +224,9 @@ def main():
     
     base_path = os.getcwd()
     base_path = os.path.join(base_path, 'JUNO')      #servidor
+
     
-    for filename in os.listdir((os.path.join(base_path, 'data/MUR_last30days'))):
+    for filename in os.listdir((os.path.join(base_path, 'data/MUR_1daytest'))):
         
         day_txt = filename[4:12]
         
@@ -238,17 +240,17 @@ def main():
         
         sst = real_sst_image(xarray_mur)
             
-    
-    
-        exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
+
+
+        exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_1daytest_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
         if not exist_path:                                                                         #if doesn't exist
-            os.makedirs(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))                # create the folder
+            os.makedirs(os.path.join(base_path, 'data/MUR_1daytest_netcdf'))                # create the folder
         
         
         
     ################################################### CREATION OF THE NETCDF   #######################################################
 
-        nc_file = os.path.join(base_path, 'data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')
+        nc_file = os.path.join(base_path, 'data/MUR_1daytest_netcdf/MUR' + day_txt + '.nc')
 
         ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
 
@@ -283,18 +285,24 @@ def main():
         cca.description = 'Binary Array with identyfied fronts through the Cayula Cornillon Algorithm (1->front) (0->not front)'
         cca[0, :, :] = cca_front.astype(float)
         
-        times.units = 'days since 1-1-1'
+        #times.units = 'days since 1-1-1'   
+        times.units = 'seconds since 1-1-1 00:00:00'
 
         lats[:] = np.linspace(35, 45, 1001)
         lons[:] = np.linspace(-19, -5, 1401)
-    
-    
-        date_obj = datetime.datetime.strptime(day_txt, '%Y%m%d')
-        date_time = date_obj.toordinal()
+        
+        
+        date_obj = datetime.datetime.strptime(day_txt, '%Y%m%d %H%M%S')
+        date_time = date2num(date_obj, times.units)
+        #date_time = date_obj.toordinal()
         times[:] = date_time
 
+        #date_obj = datetime.datetime.strptime(day_txt, '%Y%m%d')
+        #date_time = date_obj.toordinal()
+        #times[:] = date_time
+
         ds.close()
-        
+            
 
 if __name__ == "__main__":
     main()
