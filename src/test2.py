@@ -285,21 +285,21 @@ def main():
         cca.description = 'Binary Array with identyfied fronts through the Cayula Cornillon Algorithm (1->front) (0->not front)'
         cca[0, :, :] = cca_front.astype(float)
         
-        #times.units = 'days since 1-1-1'   
-        times.units = 'seconds since 1-1-1 00:00:00'
+        times.units = 'days since 1-1-1 00:00:00'   
+        #times.units = 'seconds since 1-1-1 00:00:00'
 
         lats[:] = np.linspace(35, 45, 1001)
         lons[:] = np.linspace(-19, -5, 1401)
         
         
-        date_obj = ds.variables['time'][:]
-        dates = num2date(date_obj, ds.variables['time'].units)
+        #date_obj = ds.variables['time'][:]
+        #dates = num2date(date_obj, ds.variables['time'].units)
         
         
-        #date_obj = datetime.datetime.strptime(day_txt+' 00:00:00', '%Y%m%d %H:%M:%S')
+        date_obj = datetime.datetime.strptime(day_txt+' 00:00:00', '%Y%m%d %H:%M:%S')
         #date_time = date2num(date_obj)
-        #date_time = date_obj.toordinal()
-        times[:] = dates
+        date_time = date_obj.toordinal()
+        times[:] = date_time
 
         #date_obj = datetime.datetime.strptime(day_txt, '%Y%m%d')
         #date_time = date_obj.toordinal()
