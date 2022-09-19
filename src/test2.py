@@ -293,7 +293,7 @@ def main():
         
         
         date_obj = datetime.datetime.strptime(day_txt+' 00:00:00', '%Y%m%d %H:%M:%S')
-        date_time = date2num(date_obj, times.units)
+        date_time = date2num(date_obj)
         #date_time = date_obj.toordinal()
         times[:] = date_time
 
