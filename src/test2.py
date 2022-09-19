@@ -26,7 +26,7 @@ import wget
 from math import floor
 from pydap.client import open_url
 import netCDF4 as nc
-from matplotlib.dates import date2num
+from netCDF4 import date2num, num2date
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
@@ -292,10 +292,14 @@ def main():
         lons[:] = np.linspace(-19, -5, 1401)
         
         
-        date_obj = datetime.datetime.strptime(day_txt+' 00:00:00', '%Y%m%d %H:%M:%S')
-        date_time = date2num(date_obj)
+        time = ds.variables['time'][:]
+        dates = num2date(time, ds.variables['time'].units)
+        
+        
+        #date_obj = datetime.datetime.strptime(day_txt+' 00:00:00', '%Y%m%d %H:%M:%S')
+        #date_time = date2num(date_obj)
         #date_time = date_obj.toordinal()
-        times[:] = date_time
+        times[:] = dates
 
         #date_obj = datetime.datetime.strptime(day_txt, '%Y%m%d')
         #date_time = date_obj.toordinal()
