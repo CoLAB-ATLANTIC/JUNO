@@ -226,7 +226,7 @@ def main():
     base_path = os.path.join(base_path, 'JUNO')      #servidor
 
     
-    for filename in os.listdir((os.path.join(base_path, 'data/MUR_1daytest'))):
+    for filename in os.listdir((os.path.join(base_path, 'data/MUR_daily_data'))):
         
         day_txt = filename[4:12]
         
@@ -242,66 +242,62 @@ def main():
             
 
 
-        exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_1daytest_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
+        exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
         if not exist_path:                                                                         #if doesn't exist
-            os.makedirs(os.path.join(base_path, 'data/MUR_1daytest_netcdf'))                # create the folder
+            os.makedirs(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))                # create the folder
         
         
         
     ################################################### CREATION OF THE NETCDF   #######################################################
 
-        nc_file = os.path.join(base_path, 'data/MUR_1daytest_netcdf/MUR' + day_txt + '.nc')
+        nc_file = os.path.join(base_path, 'data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')
 
         ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
 
         ds.title = 'MUR ' + day_txt + ' Fronts Arrays (Xarrays)'
 
         #create dimensions of the NetCDF file
-        time = ds.createDimension('time')
+        #time = ds.createDimension('time')
         lat = ds.createDimension('lat', 1001)
         lon = ds.createDimension('lon', 1401)
 
-        times = ds.createVariable('time', 'f4', ('time', ))
+        #times = ds.createVariable('time', 'f4', ('time', ))
         lats = ds.createVariable('lat', 'f4', ('lat', ))
         lons = ds.createVariable('lon', 'f4', ('lon', ))
 
-        sst_analyzed = ds.createVariable('sst', 'f4', ('time', 'lat', 'lon',))
+        sst_analyzed = ds.createVariable('sst', 'f4', ('lat', 'lon',))     #('time', 'lat', 'lon',)
         sst_analyzed.units = 'C'   #degrees Celsius
         sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the MUR data for that day'
         sst_analyzed[0, :, :] = sst
 
-        canny = ds.createVariable('Canny', 'f4', ('time', 'lat', 'lon',))
+        canny = ds.createVariable('Canny', 'f4', ('lat', 'lon',))
         canny.units = 'Unknown'
         canny.description = 'Binary Array with identyfied fronts through Canny from OpenCV (1-> front), (0->not front)'
         canny[0, :, :] = canny_front.astype(float)
         
-        boa = ds.createVariable('BOA', 'f4', ('time', 'lat', 'lon',))
+        boa = ds.createVariable('BOA', 'f4', ('lat', 'lon',))
         boa.units = 'Unknown'
         boa.description = 'Binary Array with identyfied fronts through the Belkin O Reilly Algorithm (temperature gradient). If the gradient is bigger than certain threshold is considered front (1) otherwise 0'
         boa[0, :, :] = boa_front
         
-        cca = ds.createVariable('CCA', 'f4', ('time', 'lat', 'lon',))
+        cca = ds.createVariable('CCA', 'f4', ('lat', 'lon',))
         cca.units = 'Unknown'
         cca.description = 'Binary Array with identyfied fronts through the Cayula Cornillon Algorithm (1->front) (0->not front)'
         cca[0, :, :] = cca_front.astype(float)
         
         #times.units = 'days since 1-1-1 00:00:00'   
-        times.units = 'seconds since 1970-1-1 00:00:00'
+        #times.units = 'seconds since 1970-1-1 00:00:00'
 
         lats[:] = np.linspace(35, 45, 1001)
         lons[:] = np.linspace(-19, -5, 1401)
         
         
-        #date_obj = ds.variables['time'][:]
-        #dates = num2date(date_obj, ds.variables['time'].units)
-        
-        time_var = ds.variables['time']
-        dtime = nc.num2date(time_var[:],times.units)
+ 
         
         #date_obj = datetime.datetime.strptime(day_txt+' 00:00:00', '%Y%m%d %H:%M:%S')
         #date_time = date2num(date_obj)
         #date_time = date_obj.toordinal()
-        times[:] = dtime
+        #times[:] = dtime
 
         #date_obj = datetime.datetime.strptime(day_txt, '%Y%m%d')
         #date_time = date_obj.toordinal()
