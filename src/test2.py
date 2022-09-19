@@ -286,7 +286,7 @@ def main():
         cca[0, :, :] = cca_front.astype(float)
         
         #times.units = 'days since 1-1-1 00:00:00'   
-        times.units = 'seconds since 1970-1-1'
+        times.units = 'seconds since 1970-1-1 00:00:00'
 
         lats[:] = np.linspace(35, 45, 1001)
         lons[:] = np.linspace(-19, -5, 1401)
@@ -295,11 +295,13 @@ def main():
         #date_obj = ds.variables['time'][:]
         #dates = num2date(date_obj, ds.variables['time'].units)
         
+        time_var = ds.variables['times']
+        dtime = nc.num2date(time_var[:],times.units)
         
         #date_obj = datetime.datetime.strptime(day_txt+' 00:00:00', '%Y%m%d %H:%M:%S')
         #date_time = date2num(date_obj)
         #date_time = date_obj.toordinal()
-        times[:] = 1663023600.0
+        times[:] = dtime
 
         #date_obj = datetime.datetime.strptime(day_txt, '%Y%m%d')
         #date_time = date_obj.toordinal()
