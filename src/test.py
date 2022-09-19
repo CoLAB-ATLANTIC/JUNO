@@ -125,7 +125,7 @@ def main():
     
     
     #download_mur(base_path=base_path, years=2, from_start_date = '0601', to_end_date='0604')      
-    download_mur(base_path=base_path, years=0, from_start_date = '0815', to_end_date='0913')     #download all data from every day from 2012 to 2021
+    download_mur(base_path=base_path, years=0, from_start_date = '0815', to_end_date='0917')     #download all data from every day from 2012 to 2021
      
     
     #FAZER DOWNLOAD DOS DIAS QUE FALTAM 2021-02-20 E 2021-02-21
