@@ -295,7 +295,7 @@ def main():
         #date_obj = ds.variables['time'][:]
         #dates = num2date(date_obj, ds.variables['time'].units)
         
-        time_var = ds.variables['times']
+        time_var = ds.variables['time']
         dtime = nc.num2date(time_var[:],times.units)
         
         #date_obj = datetime.datetime.strptime(day_txt+' 00:00:00', '%Y%m%d %H:%M:%S')
