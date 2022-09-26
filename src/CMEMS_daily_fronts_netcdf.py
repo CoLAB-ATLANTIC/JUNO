@@ -1,11 +1,11 @@
 
-################################################### CMEMS_daily_fronts_netcdf.py  #############################################
-###                                                                                                                         ###
-###    In this script the CMEMS Forecast daily data is downloaded and stored in the CMEMS_forecast_daily_data folder.       ###
-###    Then the 3 algorithms are applied to this data to get the arrays of fronts (for the Canny, BOA and CCA)              ###
-###    Then the 3 arrays plus the SST array are stored in a netCDF file int the CMEMS_daily_fronts_netcdf folder            ###
-###                                                                                                                         ###
-###############################################################################################################################
+################################################### CMEMS_daily_fronts_netcdf.py  #############################################################
+###                                                                                                                                         ###
+###    In this script the CMEMS daily data (forecast 3 days ahead) is downloaded and stored in the CMEMS_daily_data folder.        ###
+###    Then the 3 algorithms are applied to this data to get the arrays of fronts (for the Canny, BOA and CCA)                              ###
+###    Then the 3 arrays plus the SST array are stored in a netCDF file int the CMEMS_daily_fronts_netcdf folder                            ###
+###                                                                                                                                         ###
+###############################################################################################################################################
 
 
 import motuclient
@@ -77,7 +77,7 @@ def get_data(data, base_path):
     """
     
     base_path = base_path
-    data_folder = os.path.join(base_path, "data/CMEMS_forecast_daily_data")  
+    data_folder = os.path.join(base_path, "data/CMEMS_daily_data")  
     
     nc_path = os.path.join(data_folder, data)
     data_xarray = xr.load_dataset(nc_path)
@@ -261,13 +261,13 @@ def main():
     #USERNAME = lines[0][1:-1]    #MINHA MAQUINA
     #PASSWORD = lines[1][:-1]
   
-    exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_forecast_daily_data'))
+    exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_daily_data'))
     if not exist_path:
-        os.makedirs(os.path.join(base_path, 'data/CMEMS_forecast_daily_data'))
+        os.makedirs(os.path.join(base_path, 'data/CMEMS_daily_data'))
 
 
     #Get the data in the format we want: data always at 12:30
-    day_txt = (date.today() - timedelta(days=2)).strftime('%Y-%m-%d')
+    day_txt = (date.today() - timedelta(days=1)).strftime('%Y-%m-%d')
     date_motu_txt = day_txt + ' 12:30:00'
 
     OUTPUT_FILENAME = 'CMEMS_forecast_' + day_txt +'.nc'
@@ -292,29 +292,29 @@ def main():
     #Submit data request
     motuclient.motu_api.execute_request(MotuOptions(data_request_options_dict_automated))
     
-    exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_forecast_daily_fronts_netcdf'))
+    exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_daily_fronts_netcdf'))
     if not exist_path:
-        os.makedirs(os.path.join(base_path, 'data/CMEMS_forecast_daily_fronts_netcdf'))
+        os.makedirs(os.path.join(base_path, 'data/CMEMS_daily_fronts_netcdf'))
   
-    xarray_cmems_forecast = get_data('CMEMS_forecast_' + day_txt + '.nc', base_path=base_path)
+    xarray_cmems = get_data('CMEMS_' + day_txt + '.nc', base_path=base_path)
     
-    canny_front = canny_front_detection_1day(xarray_cmems_forecast)
+    canny_front = canny_front_detection_1day(xarray_cmems)
     
-    boa_front = BOA_aplication(xarray_cmems_forecast, threshold=0.05)
+    boa_front = BOA_aplication(xarray_cmems, threshold=0.05)
     
-    cca_front = CCA_front(xarray_cmems_forecast)
+    cca_front = CCA_front(xarray_cmems)
         
-    sst = real_sst_image(xarray_cmems_forecast)
+    sst = real_sst_image(xarray_cmems)
     
     
     ################################################### CREATION OF THE NETCDF   #######################################################
     
     nc_file = os.getcwd()
-    nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_forecast_daily_fronts_netcdf/CMEMS' + day_txt + '.nc')
+    nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_daily_fronts_netcdf/CMEMS' + day_txt + '.nc')
 
     ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
 
-    ds.title = 'CMEMS_Forecast ' + day_txt + ' Fronts Arrays (Xarrays)'
+    ds.title = 'CMEMS_ ' + day_txt + ' Fronts Arrays (Xarrays)'
 
     #create dimensions of the NetCDF file
     time = ds.createDimension('time')
@@ -327,7 +327,7 @@ def main():
 
     sst_analyzed = ds.createVariable('sst', 'f4', ('time', 'lat', 'lon',))
     sst_analyzed.units = 'C'   #degrees Celsius
-    sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the CMEMS Forecast data for that day'
+    sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the CMEMS data for that day'
     sst_analyzed[0, :, :] = sst
 
     canny = ds.createVariable('Canny', 'f4', ('time', 'lat', 'lon',))
