@@ -270,8 +270,8 @@ def main():
     day_txt = (date.today() - timedelta(days=1)).strftime('%Y-%m-%d')
     date_motu_txt = day_txt + ' 12:30:00'
 
-    OUTPUT_FILENAME = 'CMEMS_forecast_' + day_txt +'.nc'
-    OUTPUT_DIRECTORY = 'projects/JUNO/data/CMEMS_forecast_daily_data'
+    OUTPUT_FILENAME = 'CMEMS_' + day_txt +'.nc'
+    OUTPUT_DIRECTORY = 'projects/JUNO/data/CMEMS_daily_data'
 
     script_template = f'python -m motuclient \
         --motu https://nrt.cmems-du.eu/motu-web/Motu \
