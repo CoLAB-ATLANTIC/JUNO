@@ -310,7 +310,7 @@ def main():
     ################################################### CREATION OF THE NETCDF   #######################################################
     
     nc_file = os.getcwd()
-    nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_forecast_daily_fronts_netcdf/CMEMS' + day_txt + '.nc')
+    nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_forecast_daily_fronts_netcdf/CMEMS_forecast_' + day_txt + '.nc')
 
     ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
 
