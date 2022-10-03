@@ -1,10 +1,10 @@
 
 
-################################################### CMEMS_daily_fronts_netcdf.py  ##################################################
+################################################### CMEMS_daily_image.py  ##########################################################
 ###                                                                                                                              ###
-###    Through a cron job downloads the daily data from the CMEMS Forecast (with 2 days delay but that can be changed)           ###
-###    and saves them as a .nc file in the data folder: CMEMS_forecast_daily_data.                                               ###
-###    Then it fetches this data and applies the 3 algorithms to it. (The data is in x_array format)                             ###
+###    Through a cron job gets the daily data from the CMEMS Forecast (with 2 days delay but that can be changed)                ###
+###    that is located in the data folder: CMEMS_forecast_daily_data.                                                            ###
+###    Applies the 3 algorithms, and saves the results (png image for each algorithm) in the CMEMS_forecast_daily_images         ###
 ###                                                                                                                              ###
 ####################################################################################################################################
 
@@ -28,47 +28,6 @@ import BOA
 import CayulaCornillon_xarray    #CayulaCornillon after making some profiling changes to improve efficiency
 
 
-################################################## DOWNLOAD CMEMS_REANALYSIS DATA #####################################################
-
-# this class will be used to parse the motuclient options from a dictionary:
-class MotuOptions:
-    def __init__(self, attrs: dict):
-        super(MotuOptions, self).__setattr__("attrs", attrs)
-
-    def __setattr__(self, k, v):
-        self.attrs[k] = v
-
-    def __getattr__(self, k):
-        try:
-            return self.attrs[k]
-        except KeyError:
-            return None
-        
-#This objective of this function is:   
-# post-process the script_template (displayed clicking on VIEW SCRIPT) to create a dictionary; returns this dictionary to feed the download of the data request
-def motu_option_parser(script_template, usr, pwd, output_filename, output_directory):
-    dictionary = dict([e.strip().partition(" ")[::2] for e in script_template.split('--')])
-    dictionary['variable'] = [value for (var, value) in [e.strip().partition(" ")[::2] for e in script_template.split('--')] if var == 'variable']  
-    for k, v in list(dictionary.items()):
-        if v == '<OUTPUT_DIRECTORY>':
-            dictionary[k] = output_directory
-        if v == '<OUTPUT_FILENAME>':
-            dictionary[k] = output_filename
-        if v == '<USERNAME>':
-            dictionary[k] = usr
-        if v == '<PASSWORD>':
-            dictionary[k] = pwd
-        if k in ['longitude-min', 'longitude-max', 'latitude-min', 'latitude-max']:
-            dictionary[k] = float(v)
-        if k in ['date-min', 'date-max']:
-            dictionary[k] = v[1:-1]
-        dictionary[k.replace('-','_')] = dictionary.pop(k)
-    dictionary.pop('python')
-    dictionary['auth_mode'] = 'cas'
-    return dictionary
-
-
-####################################################################################################################
 
 ######################################### IMPORT DATA ################################################################
 
@@ -80,7 +39,7 @@ def get_data(data, base_path):
     """
     
     base_path = base_path
-    data_folder = os.path.join(base_path, "data/CMEMS_forecast_daily_data")  
+    data_folder = os.path.join(base_path, "data/CMEMS_daily_data")  
     
     nc_path = os.path.join(data_folder, data)
     data_xarray = xr.load_dataset(nc_path)
@@ -266,6 +225,8 @@ def real_sst_image(data_xarray, day_txt, base_path):
     plt.savefig(os.path.join(base_path,'data/CMEMS_forecast_daily_images/RealSST_' + day_txt+'.jpg'))
     
     
+###############################################################################################################################################################
+    
 
 def main():
     
@@ -273,52 +234,16 @@ def main():
     base_path = os.path.join(base_path, 'projects/JUNO')       #servidor
     #base_path = os.path.join(base_path, 'JUNO')                #minha maquina
     
-    #My Username and Password are stored in a .txt file stored in a data folder which belong to the gitignore
-    with open('projects/JUNO/data/copernicus_login.txt') as f:   #quando fizer clone para o servidor esta documento .txt vai ser ignorado
-        lines = f.readlines()
-        
-    USERNAME = lines[0][:-1]    #SERVIDOR
-    PASSWORD = lines[1][:-1]
-  
-    #USERNAME = lines[0][1:-1]    #MINHA MAQUINA
-    #PASSWORD = lines[1][:-1]
-  
-    exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_forecast_daily_data'))
-    if not exist_path:
-        os.makedirs(os.path.join(base_path, 'data/CMEMS_forecast_daily_data'))
-
 
     #Get the data in the format we want: data always at 12:30
-    day_txt = (date.today() - timedelta(days=2)).strftime('%Y-%m-%d')
-    date_motu_txt = day_txt + ' 12:30:00'
-
-    OUTPUT_FILENAME = 'CMEMS_forecast_' + day_txt +'.nc'
-    OUTPUT_DIRECTORY = 'projects/JUNO/data/CMEMS_forecast_daily_data'
-
-    script_template = f'python -m motuclient \
-        --motu https://nrt.cmems-du.eu/motu-web/Motu \
-        --service-id IBI_ANALYSISFORECAST_PHY_005_001-TDS \
-        --product-id cmems_mod_ibi_phy_anfc_0.027deg-2D_PT1H-m \
-        --longitude-min -19 --longitude-max -5 \
-        --latitude-min 35 --latitude-max 45 \
-        --date-min "{date_motu_txt}" --date-max "{date_motu_txt}" \
-        --variable thetao \
-        --out-dir <OUTPUT_DIRECTORY> \
-        --out-name <OUTPUT_FILENAME> \
-        --user <USERNAME> --pwd <PASSWORD>'
+    day_txt = (date.today() - timedelta(days=1)).strftime('%Y-%m-%d')
     
-    
-    data_request_options_dict_automated = motu_option_parser(script_template, USERNAME, PASSWORD, OUTPUT_FILENAME, OUTPUT_DIRECTORY)
-    #print(data_request_options_dict_automated)
-
-    #Submit data request
-    motuclient.motu_api.execute_request(MotuOptions(data_request_options_dict_automated))
     
     exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_forecast_daily_images'))
     if not exist_path:
         os.makedirs(os.path.join(base_path, 'data/CMEMS_forecast_daily_images'))
   
-    xarray_cmems_forecast = get_data('CMEMS_forecast_' + day_txt + '.nc', base_path=base_path)
+    xarray_cmems_forecast = get_data('CMEMS_' + day_txt + '.nc', base_path=base_path)
     
     canny_front_detection_1day(xarray_cmems_forecast, day_txt, base_path=base_path)
     

@@ -20,95 +20,11 @@ import matplotlib
 from matplotlib.colors import ListedColormap
 from scipy.ndimage import gaussian_filter
 from datetime import date, timedelta
-import wget
-import sys
-from math import floor
-from tqdm import tqdm
-from pydap.client import open_url
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
 import BOA
 import CayulaCornillon_xarray
-
-
-################################################ DOWNLOAD MUR DATA ##################################################
-def boundingindex(dmin, dint, boundary0, boundary1):
-    """
-    get boundaries values to download the data already cropped
-    """
-    inx0 = max(int(floor((boundary0 - dmin) / dint)), 0)
-    inx1 = max(int(floor((boundary1 - dmin) / dint)), 0)
-    if inx0 > inx1:
-        atemp = inx0
-        inx0 = inx1
-        inx1 = atemp
-    return [inx0, inx1]
-
-
-def get_mur_params(lon_box, lat_box):
-    """
-    Check sample file to get parameters for sst
-    """
-    mur_ncin = open_url(
-        'https://podaac-opendap.jpl.nasa.gov/opendap/allData/ghrsst/data/GDS2/L4/GLOB/JPL/MUR/v4.1/2018/002/20180102090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc')
-    lon = mur_ncin['lon']
-    lat = mur_ncin['lat']
-    lon_step = np.mean(np.diff(lon))
-    lat_step = np.mean(np.diff(lat))
-    [mur_i0, mur_i1] = boundingindex(lon[0][0].data, lon_step, lon_box[0], lon_box[1])
-    [mur_j0, mur_j1] = boundingindex(lat[0][0].data, lat_step, lat_box[0], lat_box[1])
-
-    return mur_i0, mur_i1, mur_j0, mur_j1
-
-
-def download_from_url(fileget, filenameout, replace, printiti):
-    """
-    function that tries to download data from "fileget" if the data didn't previously exist,
-    the user asked to replace the old data, or the file has 0 bytes
-    """
-    exists = os.path.exists(filenameout)
-    if exists:
-        file_size = os.path.getsize(filenameout)
-    else:
-        file_size = 1
-    if (not exists) or (replace and exists) or (file_size == 0):
-        if exists:
-            os.remove(filenameout)
-        try:
-            return wget.download(fileget, out=filenameout, bar=None)
-        except Exception as e:
-            if printiti:
-                print(e)
-                print("Error downloading")
-                print("Download error url: " + fileget)
-            return e
-    return filenameout
-
-def download_sst(path, date, mur_j0, mur_j1, mur_i0, mur_i1, replace):
-    
-    """
-    Function to download individual days of MUR data
-    """
-    
-    opendap_dir = 'https://podaac-opendap.jpl.nasa.gov/opendap/allData/ghrsst/data/GDS2/L4/GLOB/JPL/MUR/v4.1/' + str(
-        date.year) + '/'
-    filename = opendap_dir + "{0:0>3}".format(str(date.dayofyear)) + '/' + date.strftime(
-        "%Y%m%d") + '090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc.nc4'
-    filenameout = path + "sst_" + date.strftime("%Y%m%d") + '.nc'
-    fileget = filename + '?analysed_sst[0:1:0][' + str(mur_j0) + ':1:' + str(mur_j1) + '][' + str(mur_i0) + ':1:' + str(
-        mur_i1) + ']'
-    download_from_url(fileget, filenameout, replace, 1)
-    return
-
-
-def download_sst_thread(data_range, sst_path, mur_j0, mur_j1, mur_i0, mur_i1, replace):
-    """
-    Function to download several MUR data days simultaneously
-    """
-    for date in tqdm(data_range, desc='SST', file=sys.stdout):
-        download_sst(sst_path, date, mur_j0, mur_j1, mur_i0, mur_i1, replace)
-    return
 
 
 ######################################### IMPORT DATA #######################################################
@@ -316,16 +232,8 @@ def main():
     base_path = os.path.join(base_path, 'projects/JUNO')      #servidor
    # base_path = os.path.join(base_path, 'JUNO')               #minha maquina
     
-    #Quando criar o cronjob para correr este script diariamente, este for desaparece e day passa a ser 1 (yesterday)
-    #for day in range(2, 4):
     day_txt = (date.today() - timedelta(days=2)).strftime('%Y%m%d')
         
-    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data'))   #check if folder MUR_dailyu_data exists in data folder
-    if not exist_path:                                                            #if it don't exist:
-        os.makedirs(os.path.join(base_path, 'data/MUR_daily_data'))               #create the folder
-
-    download_sst(path = os.path.join(base_path, 'data/MUR_daily_data/'), date = pd.to_datetime(day_txt), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
-    
     
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_algorithm_daily_images'))    #check if folder MUR_algorithm_daily_images exists in data folder
     if not exist_path:                                                                         #if doesn't exist
