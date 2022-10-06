@@ -160,7 +160,7 @@ def canny_front_detection_1day(data_xarray, thresh_min=120, thresh_max=220, aper
     mask_dilated = cv2.dilate(mask255, kernel)
     canny_front = np.ma.masked_array(canny, mask_dilated)   #Mask an array where a condition is True
     
-    #canny_front = np.flipud(canny_front)    
+    canny_front = np.flipud(canny_front)    
     
     
     return canny_front
@@ -208,7 +208,7 @@ def BOA_aplication(data_xarray, threshold = 0.05):
     mask_dilated = cv2.dilate(mask255, kernel)
     boa_front = np.ma.masked_array(boa_front, mask_dilated)  
     
-    #boa_front = np.flipud(boa_front) 
+    boa_front = np.flipud(boa_front) 
 
     return boa_front
 
@@ -269,7 +269,7 @@ def CCA_front(data_xarray):
     mask_dilated = cv2.dilate(mask255, kernel)
     cca_front = np.ma.masked_array(front, mask_dilated)  
     
-    #cca_front = np.flipud(cca_front) 
+    cca_front = np.flipud(cca_front) 
     
     return cca_front
     
