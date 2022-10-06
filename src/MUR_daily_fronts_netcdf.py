@@ -333,38 +333,38 @@ def main():
     ds.title = 'MUR ' + day_txt + ' Fronts Arrays (Xarrays)'
 
     #create dimensions of the NetCDF file
-    time = ds.createDimension('time')
+    #time = ds.createDimension('time')
     lat = ds.createDimension('lat', 1001)
     lon = ds.createDimension('lon', 1401)
 
-    times = ds.createVariable('time', 'f4', ('time', ))
+    #times = ds.createVariable('time', 'f4', ('time', ))
     lats = ds.createVariable('lat', 'f4', ('lat', ))
     lons = ds.createVariable('lon', 'f4', ('lon', ))
 
-    sst_analyzed = ds.createVariable('sst', 'f4', ('time', 'lat', 'lon',))    #('lat', 'lon',)
+    sst_analyzed = ds.createVariable('sst', 'f4', ('lat', 'lon',))    #('lat', 'lon',)
     sst_analyzed.units = 'C'   #degrees Celsius
     sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the MUR data for that day'
-    sst_analyzed[0, :, :] = sst
-    #sst_analyzed[:, :] = sst
+    #sst_analyzed[0, :, :] = sst
+    sst_analyzed[:, :] = sst
 
 
-    canny = ds.createVariable('Canny', 'f4', ('time', 'lat', 'lon',))
+    canny = ds.createVariable('Canny', 'f4', ('lat', 'lon',))
     canny.units = 'Unknown'
     canny.description = 'Binary Array with identyfied fronts through Canny from OpenCV (1-> front), (0->not front)'
-    canny[0, :, :] = canny_front.astype(float)
-    #canny[:, :] = canny_front.astype(float)
+    #canny[0, :, :] = canny_front.astype(float)
+    canny[:, :] = canny_front.astype(float)
     
-    boa = ds.createVariable('BOA', 'f4', ('time', 'lat', 'lon',))
+    boa = ds.createVariable('BOA', 'f4', ('lat', 'lon',))
     boa.units = 'Unknown'
     boa.description = 'Binary Array with identyfied fronts through the Belkin O Reilly Algorithm (temperature gradient). If the gradient is bigger than certain threshold is considered front (1) otherwise 0'
-    boa[0, :, :] = boa_front
-    #boa[:, :] = boa_front
+    #boa[0, :, :] = boa_front
+    boa[:, :] = boa_front
     
-    cca = ds.createVariable('CCA', 'f4', ('time', 'lat', 'lon',))
+    cca = ds.createVariable('CCA', 'f4', ('lat', 'lon',))
     cca.units = 'Unknown'
     cca.description = 'Binary Array with identyfied fronts through the Cayula Cornillon Algorithm (1->front) (0->not front)'
-    cca[0, :, :] = cca_front.astype(float)
-    #cca[:, :] = cca_front.astype(float)
+    #cca[0, :, :] = cca_front.astype(float)
+    cca[:, :] = cca_front.astype(float)
     
     #times.units = 'days since 1-1-1'
 
