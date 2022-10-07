@@ -154,6 +154,7 @@ def canny_front_detection_1day(data_xarray, thresh_min=120, thresh_max=220, aper
     canny[canny == 255] = 1
     
     #convert 0s to Nans
+    canny = canny.astype('float')
     canny[canny == 0] = 'nan'
     
     #Apply a mask for the continental zone:
