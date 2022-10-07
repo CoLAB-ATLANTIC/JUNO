@@ -309,7 +309,7 @@ def real_sst_image(data_xarray):
     
     sst_image = data_xarray['analysed_sst'][0,:,:].values
     #sst = np.squeeze(sst)
-    sst_image = np.flipud(sst_image)
+    #sst_image = np.flipud(sst_image)
     
     return sst_image
  
