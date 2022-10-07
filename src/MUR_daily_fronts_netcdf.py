@@ -298,7 +298,7 @@ def main():
     base_path = os.path.join(base_path, 'projects/JUNO')      #servidor
     
     #download MUR data for the day before yesterday
-    day_txt = (date.today() - timedelta(days=3)).strftime('%Y%m%d')
+    day_txt = (date.today() - timedelta(days=2)).strftime('%Y%m%d')
         
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data'))   #check if folder MUR_dailyu_data exists in data folder
     if not exist_path:                                                            #if it don't exist:
