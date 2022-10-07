@@ -307,7 +307,7 @@ def real_sst_image(data_xarray):
     Function to store the real sst image
     """
     
-    data_xarray_sst = data_xarray.copy(deep=True)
+    data_xarray_sst = data_xarray.copy(deep=False)
     
     sst = data_xarray_sst['analysed_sst'][0,:,:].values
     #sst = np.squeeze(sst)
