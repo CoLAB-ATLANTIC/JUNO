@@ -162,6 +162,9 @@ def canny_front_detection_1day(data_xarray, thresh_min=120, thresh_max=220, aper
     
     canny_front = np.flipud(canny_front)    
     
+    #convert 0s to Nans
+    canny_front[canny_front == 0] = 'nan'
+    
     
     return canny_front
     
@@ -209,6 +212,9 @@ def BOA_aplication(data_xarray, threshold = 0.05):
     boa_front = np.ma.masked_array(boa_front, mask_dilated)  
     
     boa_front = np.flipud(boa_front) 
+    
+    #convert 0s to Nans
+    boa_front[boa_front == 0] = 'nan'
 
     return boa_front
 
@@ -270,6 +276,9 @@ def CCA_front(data_xarray):
     cca_front = np.ma.masked_array(front, mask_dilated)  
     
     cca_front = np.flipud(cca_front) 
+    
+    #convert 0s to Nans
+    cca_front[cca_front == 0] = 'nan'
     
     return cca_front
     
