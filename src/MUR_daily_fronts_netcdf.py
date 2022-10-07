@@ -286,8 +286,7 @@ def real_sst_image(data_xarray):
     
     sst = np.array(data_xarray['analysed_sst'])
     sst = np.squeeze(sst)
-    sst = np.flipud(sst)
-    sst = np.flipud(sst)
+    #sst = np.flipud(sst)
     
     return sst
  
@@ -310,7 +309,7 @@ def main():
     
     xarray_mur = get_data(data = 'sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
     
-    #sst = real_sst_image(xarray_mur)
+    sst = real_sst_image(xarray_mur)
     
     canny_front = canny_front_detection_1day(xarray_mur)
     
@@ -318,7 +317,7 @@ def main():
     
     cca_front = CCA_front(xarray_mur)
         
-    sst = real_sst_image(xarray_mur)
+    #sst = real_sst_image(xarray_mur)
     
     
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
