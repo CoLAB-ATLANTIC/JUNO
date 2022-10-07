@@ -286,7 +286,7 @@ def real_sst_image(data_xarray):
     
     sst = np.array(data_xarray['analysed_sst'])
     sst = np.squeeze(sst)
-    sst = np.flipud(sst)
+    #sst = np.flipud(sst)
     
     return sst
  
