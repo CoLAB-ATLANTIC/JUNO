@@ -307,13 +307,11 @@ def real_sst_image(data_xarray):
     Function to store the real sst image
     """
     
-    data_xarray_sst = data_xarray.copy(deep=False)
-    
-    sst = data_xarray_sst['analysed_sst'][0,:,:].values
+    sst_image = data_xarray['analysed_sst'][0,:,:].values
     #sst = np.squeeze(sst)
-    sst = np.flipud(sst)
+    sst_image = np.flipud(sst_image)
     
-    return sst
+    return sst_image
  
 
 
@@ -335,15 +333,16 @@ def main():
     xarray_mur = get_data(data = 'sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
     
     
-    sst = real_sst_image(xarray_mur)
     
     canny_front = canny_front_detection_1day(xarray_mur)
     
     boa_front = BOA_aplication(xarray_mur, threshold=0.05)
     
     cca_front = CCA_front(xarray_mur)
+    
+    sst_image = real_sst_image(xarray_mur)
         
-    #sst = real_sst_image(xarray_mur)
+
     
     
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
@@ -374,7 +373,7 @@ def main():
     sst_analyzed.units = 'C'   #degrees Celsius
     sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the MUR data for that day'
     #sst_analyzed[0, :, :] = sst
-    sst_analyzed[:, :] = sst
+    sst_analyzed[:, :] = sst_image
 
 
     canny = ds.createVariable('Canny', 'f4', ('lat', 'lon',))
