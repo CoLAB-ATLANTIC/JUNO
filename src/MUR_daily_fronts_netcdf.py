@@ -158,6 +158,7 @@ def canny_front_detection_1day(data_xarray, thresh_min=120, thresh_max=220, aper
     canny[canny == 0] = 'nan'
     
     #Apply a mask for the continental zone:
+    sst = data_xarray['analysed_sst'][0,:,:].values
     mask = np.isnan(np.flipud(sst))    #Boolean array: True where array Temp had Null Values (correspond to the continental zone)
     mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which values= 255 when mask=True
     #Dilation to ensure that the pixels that belong to the "shore/continental zone" are not considered fronts 
@@ -331,6 +332,7 @@ def main():
     
     xarray_mur = get_data(data = 'sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
     
+    sst = real_sst_image(xarray_mur)
     
     canny_front = canny_front_detection_1day(xarray_mur)
     
@@ -338,7 +340,7 @@ def main():
     
     cca_front = CCA_front(xarray_mur)
         
-    sst = real_sst_image(xarray_mur)
+    #sst = real_sst_image(xarray_mur)
     
     
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
