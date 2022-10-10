@@ -90,7 +90,7 @@ def get_data(data, base_path):
 
 #################################### CANNY ALGORITHM ##########################################################
 
-def canny_front_detection_1day(data_xarray, thresh_min=140, thresh_max=230, apertureSize=5, sigma=3):
+def canny_front_detection_1day(data_xarray, thresh_min=210, thresh_max=230, apertureSize=5, sigma=3):
     
     """
     This function receives a dataframe with CMEMS Forecast data for a individual day and returns the array 
@@ -132,7 +132,7 @@ def canny_front_detection_1day(data_xarray, thresh_min=140, thresh_max=230, aper
 ################################### Belkin O'Reilly Algorithm ##########################################################
 
 
-def BOA_aplication(data_xarray, threshold = 0.2):  
+def BOA_aplication(data_xarray, threshold = 0.4):  
     
     """
     Function to, for a given dataframe with a longitude, latitude and SST columns, 
