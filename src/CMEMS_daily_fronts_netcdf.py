@@ -1,7 +1,7 @@
 
 ################################################### CMEMS_daily_fronts_netcdf.py  #############################################################
 ###                                                                                                                                         ###
-###    In this script the CMEMS daily data (forecast 3 days ahead) is downloaded and stored in the CMEMS_daily_data folder.        ###
+###    In this script the CMEMS daily data (forecast 3 days ahead) is downloaded and stored in the CMEMS_daily_data folder.                 ###
 ###    Then the 3 algorithms are applied to this data to get the arrays of fronts (for the Canny, BOA and CCA)                              ###
 ###    Then the 3 arrays plus the SST array are stored in a netCDF file int the CMEMS_daily_fronts_netcdf folder                            ###
 ###                                                                                                                                         ###
