@@ -136,7 +136,7 @@ def canny_front_detection_1day(data_xarray, thresh_min=210, thresh_max=230, aper
 ################################### Belkin O'Reilly Algorithm ##########################################################
 
 
-def BOA_aplication(data_xarray, threshold = 0.2):  
+def BOA_aplication(data_xarray, threshold = 0.15):  
     
     """
     Function to, for a given dataframe with a longitude, latitude and SST columns, 
@@ -310,7 +310,7 @@ def main():
     
     canny_front = canny_front_detection_1day(xarray_cmems)
     
-    boa_front = BOA_aplication(xarray_cmems, threshold=0.05)
+    boa_front = BOA_aplication(xarray_cmems, threshold=0.15)
     
     cca_front = CCA_front(xarray_cmems)
         
