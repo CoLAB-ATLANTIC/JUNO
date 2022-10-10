@@ -90,7 +90,7 @@ def get_data(data, base_path):
 
 #################################### CANNY ALGORITHM ##########################################################
 
-def canny_front_detection_1day(data_xarray, thresh_min=120, thresh_max=220, apertureSize=5, sigma=5):
+def canny_front_detection_1day(data_xarray, thresh_min=210, thresh_max=230, apertureSize=5, sigma=3):
     
     """
     This function receives a dataframe with CMEMS Forecast data for a individual day and returns the array 
@@ -113,6 +113,10 @@ def canny_front_detection_1day(data_xarray, thresh_min=120, thresh_max=220, aper
     
     canny[canny == 255] = 1
     
+    #convert 0s to Nans
+    canny = canny.astype('float')
+    canny[canny == 0] = 'nan'
+    
     #Apply a mask for the continental zone:
     mask = np.isnan(np.flipud(sst))    #Boolean array: True where array Temp had Null Values (correspond to the continental zone)
     mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which values= 255 when mask=True
@@ -132,7 +136,7 @@ def canny_front_detection_1day(data_xarray, thresh_min=120, thresh_max=220, aper
 ################################### Belkin O'Reilly Algorithm ##########################################################
 
 
-def BOA_aplication(data_xarray, threshold = 0.05):  
+def BOA_aplication(data_xarray, threshold = 0.15):  
     
     """
     Function to, for a given dataframe with a longitude, latitude and SST columns, 
@@ -153,6 +157,9 @@ def BOA_aplication(data_xarray, threshold = 0.05):
     
     boa_front = np.where(boa_front>=threshold, 1, boa_front)    
     boa_front = np.where(boa_front<threshold, 0, boa_front)
+    
+    #convert 0s to Nans
+    boa_front[boa_front == 0] = 'nan'
 
 
     mask = np.isnan(np.flipud(ingrid))       #Boolean array=True where array Temp had Null values (continental zone)
@@ -207,6 +214,9 @@ def CCA_front(data_xarray):
         front[int(rows_y[i]), int(cols_x[i])] = front[int(rows_y[i]), int(cols_x[i])] + 1
             
     front[front != 0] = 1
+    
+    #convert 0s to Nans
+    front[front == 0] = 'nan'
 
 
     #Create a masked_array in order to get the continental zone well defined
@@ -300,7 +310,7 @@ def main():
     
     canny_front = canny_front_detection_1day(xarray_cmems_forecast)
     
-    boa_front = BOA_aplication(xarray_cmems_forecast, threshold=0.05)
+    boa_front = BOA_aplication(xarray_cmems_forecast, threshold=0.15)
     
     cca_front = CCA_front(xarray_cmems_forecast)
         
@@ -317,43 +327,47 @@ def main():
     ds.title = 'CMEMS_Forecast ' + day_txt + ' Fronts Arrays (Xarrays)'
 
     #create dimensions of the NetCDF file
-    time = ds.createDimension('time')
+    #time = ds.createDimension('time')
     lat = ds.createDimension('lat', 361)
     lon = ds.createDimension('lon', 505)
 
-    times = ds.createVariable('time', 'f4', ('time', ))
+    #times = ds.createVariable('time', 'f4', ('time', ))
     lats = ds.createVariable('lat', 'f4', ('lat', ))
     lons = ds.createVariable('lon', 'f4', ('lon', ))
 
-    sst_analyzed = ds.createVariable('sst', 'f4', ('time', 'lat', 'lon',))
+    sst_analyzed = ds.createVariable('sst', 'f4', ('lat', 'lon',))     #('time', 'lat', 'lon',)
     sst_analyzed.units = 'C'   #degrees Celsius
     sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the CMEMS Forecast data for that day'
-    sst_analyzed[0, :, :] = sst
+    #sst_analyzed[0, :, :] = sst
+    sst_analyzed[:, :] = sst
 
-    canny = ds.createVariable('Canny', 'f4', ('time', 'lat', 'lon',))
+    canny = ds.createVariable('Canny', 'f4', ('lat', 'lon',))
     canny.units = 'Unknown'
     canny.description = 'Binary Array with identyfied fronts through Canny from OpenCV (1-> front), (0->not front)'
-    canny[0, :, :] = canny_front.astype(float)
+    #canny[0, :, :] = canny_front.astype(float)
+    canny[:, :] = canny_front.astype(float)
     
-    boa = ds.createVariable('BOA', 'f4', ('time', 'lat', 'lon',))
+    boa = ds.createVariable('BOA', 'f4', ('lat', 'lon',))
     boa.units = 'Unknown'
     boa.description = 'Binary Array with identyfied fronts through the Belkin O Reilly Algorithm (temperature gradient). If the gradient is bigger than certain threshold is considered front (1) otherwise 0'
-    boa[0, :, :] = boa_front
+    #boa[0, :, :] = boa_front
+    boa[:, :] = boa_front
     
-    cca = ds.createVariable('CCA', 'f4', ('time', 'lat', 'lon',))
+    cca = ds.createVariable('CCA', 'f4', ('lat', 'lon',))
     cca.units = 'Unknown'
     cca.description = 'Binary Array with identyfied fronts through the Cayula Cornillon Algorithm (1->front) (0->not front)'
-    cca[0, :, :] = cca_front.astype(float)
+    #cca[0, :, :] = cca_front.astype(float)
+    cca[:, :] = cca_front.astype(float)
     
-    times.units = 'days since 1-1-1'
+    #times.units = 'days since 1-1-1'
 
     lats[:] = np.linspace(35, 45, 361)
     lons[:] = np.linspace(-19, -5, 505)
    
    
-    date_obj = datetime.datetime.strptime(day_txt, '%Y-%m-%d')
-    date_time = date_obj.toordinal()
-    times[:] = date_time
+    #date_obj = datetime.datetime.strptime(day_txt, '%Y-%m-%d')
+    #date_time = date_obj.toordinal()
+    #times[:] = date_time
 
     ds.close()
     
