@@ -330,6 +330,8 @@ def main():
     exist_sst_file = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data/sst_' + day_txt + '.nc'))
     if exist_sst_file:
         os.remove(exist_sst_file)
+        
+    breakpoint()
     
     download_sst(path = os.path.join(base_path, 'data/MUR_daily_data/'), date = pd.to_datetime(day_txt), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
             
