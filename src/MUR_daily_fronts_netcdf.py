@@ -321,7 +321,7 @@ def main():
     base_path = os.path.join(base_path, 'projects/JUNO')      #servidor
     
     #download MUR data for the day before yesterday
-    day_txt = (date.today() - timedelta(days=2)).strftime('%Y%m%d')
+    day_txt = (date.today() - timedelta(days=3)).strftime('%Y%m%d')
         
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data'))   #check if folder MUR_dailyu_data exists in data folder
     if not exist_path:                                                            #if it don't exist:
@@ -331,7 +331,6 @@ def main():
             
     
     xarray_mur = get_data(data = 'sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
-    
     
     
     canny_front = canny_front_detection_1day(xarray_mur)
@@ -369,7 +368,7 @@ def main():
     lats = ds.createVariable('lat', 'f4', ('lat', ))
     lons = ds.createVariable('lon', 'f4', ('lon', ))
 
-    sst_analyzed = ds.createVariable('sst', 'f4', ('lat', 'lon',))    #('lat', 'lon',)
+    sst_analyzed = ds.createVariable('sst', 'f4', ('lat', 'lon',))    #('time', 'lat', 'lon',)
     sst_analyzed.units = 'C'   #degrees Celsius
     sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the MUR data for that day'
     #sst_analyzed[0, :, :] = sst
