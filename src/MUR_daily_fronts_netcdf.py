@@ -327,6 +327,10 @@ def main():
     if not exist_path:                                                            #if it don't exist:
         os.makedirs(os.path.join(base_path, 'data/MUR_daily_data'))               #create the folder
 
+    exist_sst_file = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data/sst_' + day_txt + '.nc'))
+    if exist_sst_file:
+        os.remove(exist_sst_file)
+    
     download_sst(path = os.path.join(base_path, 'data/MUR_daily_data/'), date = pd.to_datetime(day_txt), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
             
     
@@ -352,6 +356,9 @@ def main():
 
     nc_file = os.getcwd()
     nc_file = os.path.join(nc_file, 'projects/JUNO/data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')
+    
+    if os.path.exists(nc_file):
+        os.remove(nc_file)
 
     ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
 
