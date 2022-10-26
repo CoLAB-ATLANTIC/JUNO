@@ -321,7 +321,7 @@ def main():
     base_path = os.path.join(base_path, 'projects/JUNO')      #servidor
     
     #download MUR data for the day before yesterday
-    day_txt = (date.today() - timedelta(days=3)).strftime('%Y%m%d')
+    day_txt = (date.today() - timedelta(days=4)).strftime('%Y%m%d')
         
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data'))   #check if folder MUR_dailyu_data exists in data folder
     if not exist_path:                                                            #if it don't exist:
@@ -333,18 +333,15 @@ def main():
     xarray_mur = get_data(data = 'sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
     
     
+    sst_image = real_sst_image(xarray_mur)
     
     canny_front = canny_front_detection_1day(xarray_mur)
     
     boa_front = BOA_aplication(xarray_mur, threshold=0.05)
     
     cca_front = CCA_front(xarray_mur)
-    
-    sst_image = real_sst_image(xarray_mur)
         
 
-    
-    
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
     if not exist_path:                                                                         #if doesn't exist
         os.makedirs(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))                # create the folder
