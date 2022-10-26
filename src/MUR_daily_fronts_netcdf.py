@@ -321,7 +321,7 @@ def main():
     base_path = os.path.join(base_path, 'projects/JUNO')      #servidor
     
     #download MUR data for the day before yesterday
-    day_txt = (date.today() - timedelta(days=4)).strftime('%Y%m%d')
+    day_txt = (date.today() - timedelta(days=3)).strftime('%Y%m%d')
         
     exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data'))   #check if folder MUR_dailyu_data exists in data folder
     if not exist_path:                                                            #if it don't exist:
@@ -331,14 +331,13 @@ def main():
     if os.path.exists(exist_sst_file):
         os.remove(exist_sst_file)
         
-    breakpoint()
     
     download_sst(path = os.path.join(base_path, 'data/MUR_daily_data/'), date = pd.to_datetime(day_txt), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
             
     
     xarray_mur = get_data(data = 'sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
     
-    
+    breakpoint()
     sst_image = real_sst_image(xarray_mur)
     
     canny_front = canny_front_detection_1day(xarray_mur)
