@@ -327,8 +327,8 @@ def main():
     if not exist_path:                                                            #if it don't exist:
         os.makedirs(os.path.join(base_path, 'data/MUR_daily_data'))               #create the folder
 
-    exist_sst_file = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data/sst_' + day_txt + '.nc'))
-    if exist_sst_file:
+    exist_sst_file = os.path.join(base_path, 'data/MUR_daily_data/sst_' + day_txt + '.nc')
+    if os.path.exists(exist_sst_file):
         os.remove(exist_sst_file)
         
     breakpoint()
