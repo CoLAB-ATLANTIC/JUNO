@@ -369,7 +369,7 @@ def main():
     lats = ds.createVariable('lat', 'f4', ('lat', ))
     lons = ds.createVariable('lon', 'f4', ('lon', ))
 
-    sst_analyzed = ds.createVariable('sst', 'f4', ('lat', 'lon',))    #('lat', 'lon',)
+    sst_analyzed = ds.createVariable('sst', 'f4', ('lat', 'lon',))    #('time', 'lat', 'lon',)
     sst_analyzed.units = 'C'   #degrees Celsius
     sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the MUR data for that day'
     #sst_analyzed[0, :, :] = sst
