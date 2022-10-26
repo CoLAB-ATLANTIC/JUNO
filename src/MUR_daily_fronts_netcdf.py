@@ -337,7 +337,7 @@ def main():
     
     xarray_mur = get_data(data = 'sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
     
-    #breakpoint()
+    breakpoint()
     sst_image = real_sst_image(xarray_mur)
     
     canny_front = canny_front_detection_1day(xarray_mur)
