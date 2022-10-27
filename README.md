@@ -61,7 +61,7 @@ The landscape of scientific and technological endeavours will change significant
 
 ### Canny Algorithm
 
-It is the most widely used gradient-based algorithm for edge detection in 2D images, developed in 1986. Canny comprises several phases: noise reduction and finding the intensity gradient of the image; non-maximum suppression (which converts thick edges into thin ones); and hysteresis thresholding (to decide which edges are edges and which are not) (LINK).
+It is the most widely used gradient-based algorithm for edge detection in 2D images, developed in 1986. Canny comprises several phases: noise reduction and finding the intensity gradient of the image; non-maximum suppression (which converts thick edges into thin ones); and hysteresis thresholding (to decide which edges are edges and which are not) ([LINK](https://docs.opencv.org/4.x/da/d22/tutorial_py_canny.html)).
 
 In our case, for the detection of fronts in an image, the OpenCV (computer vision library) function .canny() is used based on the Ren et al. (2021) study. Several parameters were optimized like the 8-bit image, the minimum and maximum threshold for hysteresis, the aperture size of the Sobel operator (3x3, 5x5 or 7x7), and the L2gradient (a boolean for calculating the magnitude gradient of the image). For each image (matrix with SST values), a Gaussian filter might be applied, and a mask for the definition of the continental zone. With the application of Canny, the algorithm will return an array of pixel values. If a given pixel has been identified as a front, its value will be 1. Otherwise, it will be 0. Depending on the characteristics of the data we are using, namely the resolution, it will be necessary to vary some parameters of the canny_visualization function to obtain the best possible visualization. That trimming was significant in the case of Multi-Scale Ultra High Resolution (MUR) Sea Surface Temperature (SST) data. We applied a gaussian filter with a specific sigma value to reduce image noise, adapted the aperture size to a 5x5 array instead of 3x3, and changed the threshold limits. It also might be helpful to modify parameters that define the data range that the colourmap covers
 
@@ -90,6 +90,21 @@ The algorithm presented is used as a Single Image Edge Detector (SIED). Its basi
 CCA is probably the most used algorithm in studies about ocean fronts, even in the Portuguese oceanic region (Relvas et al., 2007). The programming implementation was based on Fortran or Matlab routines which are old or have no open-source usage. But both were used as the source of information for our execution in Python. We want to acknowledge Prof. Joaquim Luís (University of Algarve) for making the CCA [code available in Matlab](https://github.com/joa-quim/mirone/blob/master/src_figs/cayula_cornillon.m) through [Mirone software](http://joa-quim.pt/mirone/main.html) and Dr Paulo Oliveira (IPMA) for the Fortran-based code and guidance on the Python implementation. 
 
 [CCA frontal probabilities notebook](notebooks/CayulaCornillon_frontal_prob.ipynb)
+
+### References
+
+Belkin, I. M., & O'Reilly, J. E. (2009). An algorithm for oceanic front detection in chlorophyll and SST satellite imagery. *Journal of Marine Systems, 78(3)*, 319-326.
+
+Belkin, I. M. (2021). Remote sensing of ocean fronts in marine ecology and fisheries. *Remote Sensing*, 13(5), 883.
+
+Cayula, J. F., & Cornillon, P. (1992). Edge detection algorithm for SST images. *Journal of Atmospheric and Oceanic technology*, 9(1), 67-80.
+
+Cayula, J. F., & Cornillon, P. (1995). Multi-image edge detection for SST images. *Journal of Atmospheric and Oceanic Technology*, 12(4), 821-829. 
+
+Ren, S., Zhu, X., Drevillon, M., Wang, H., Zhang, Y., Zu, Z., & Li, A. (2021). Detection of SST fronts from a high-resolution model and its preliminary results in the south China sea. *Journal of Atmospheric and Oceanic Technology*, 38(2), 387-403.
+
+Relvas, P., Barton, E. D., Dubert, J., Oliveira, P. B., Peliz, A., Da Silva, J. C. B., & Santos, A. M. P. (2007). Physical oceanography of the western Iberia ecosystem: latest views and challenges. *Progress in Oceanography*, 74(2-3), 149-173.
+
 
 <!-- LICENSE -->
 ## License
