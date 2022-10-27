@@ -26,9 +26,7 @@
 
 **Summary:** This project, made in partnership with +ATLANTIC CoLAB associate FEUP is a part of the JUNO project and it aims to provide different algorithms implemented in Python for the detection of oceanic fronts and the calculation of Frontal Probabilities on SST (Sea Surface Temperature) images at a given geographical location for a given period. This repository was supported by "JUNO - Robotic exploration of Atlantic waters" project from the *Fundação Luso-Americana para o Desenvolvimento* ([FLAD](https://www.flad.pt/en/))
 
-![Image of Project](/images/logo_atlantic.png)
-![Image of Project](/images/lsts_feup.png)
-![Image of Project](/images/flad_vermelho.jpg)
+![Image of Project](/images/two_logos.png)
 
 <!-- TABLE OF CONTENTS
 <details>
