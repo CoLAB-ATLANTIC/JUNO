@@ -327,6 +327,7 @@ def main():
     if not exist_path:                                                            #if it don't exist:
         os.makedirs(os.path.join(base_path, 'data/MUR_daily_data'))               #create the folder
 
+    #check if the daily sst data file already exists in the MUR_daily_data folder. If it does delete it  
     exist_sst_file = os.path.join(base_path, 'data/MUR_daily_data/sst_' + day_txt + '.nc')
     if os.path.exists(exist_sst_file):
         os.remove(exist_sst_file)
@@ -337,7 +338,7 @@ def main():
     
     xarray_mur = get_data(data = 'sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
     
-    breakpoint()
+    #breakpoint()
     sst_image = real_sst_image(xarray_mur)
     
     canny_front = canny_front_detection_1day(xarray_mur)
