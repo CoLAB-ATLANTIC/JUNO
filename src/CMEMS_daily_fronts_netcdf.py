@@ -1,7 +1,7 @@
 
 ################################################### CMEMS_daily_fronts_netcdf.py  #############################################################
 ###                                                                                                                                         ###
-###    In this script the CMEMS daily data (forecast 3 days ahead) is downloaded and stored in the CMEMS_daily_data folder.                 ###
+###    In this script the CMEMS daily data (2 days behind) is downloaded and stored in the CMEMS_daily_data folder.                 ###
 ###    Then the 3 algorithms are applied to this data to get the arrays of fronts (for the Canny, BOA and CCA)                              ###
 ###    Then the 3 arrays plus the SST array are stored in a netCDF file int the CMEMS_daily_fronts_netcdf folder                            ###
 ###                                                                                                                                         ###
@@ -337,25 +337,25 @@ def main():
 
     sst_analyzed = ds.createVariable('sst', 'f4', ('lat', 'lon',))     #('time', 'lat', 'lon',)
     sst_analyzed.units = 'C'   #degrees Celsius
-    sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) relative to the CMEMS data for that day'
+    sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) in ºC relative to the CMEMS data for that day'
     #sst_analyzed[0, :, :] = sst
     sst_analyzed[:, :] = sst
 
     canny = ds.createVariable('Canny', 'f4', ('lat', 'lon',))
     canny.units = 'Unknown'
-    canny.description = 'Binary Array with identyfied fronts through Canny from OpenCV (1-> front), (0->not front)'
+    canny.description = 'Array with identyfied fronts through Canny from OpenCV (1-> front), (Nan->not front)'
     #canny[0, :, :] = canny_front.astype(float)
     canny[:, :] = canny_front.astype(float)
     
     boa = ds.createVariable('BOA', 'f4', ('lat', 'lon',))
     boa.units = 'Unknown'
-    boa.description = 'Binary Array with identyfied fronts through the Belkin O Reilly Algorithm (temperature gradient). If the gradient is bigger than certain threshold is considered front (1) otherwise 0'
+    boa.description = 'Array with identyfied fronts through the Belkin O Reilly Algorithm (temperature gradient). If the gradient is bigger than certain threshold is considered front (1) otherwise Nan'
     #boa[0, :, :] = boa_front
     boa[:, :] = boa_front
     
     cca = ds.createVariable('CCA', 'f4', ('lat', 'lon',))
     cca.units = 'Unknown'
-    cca.description = 'Binary Array with identyfied fronts through the Cayula Cornillon Algorithm (1->front) (0->not front)'
+    cca.description = 'Array with identyfied fronts through the Cayula Cornillon Algorithm (1->front) (Nan->not front)'
     #cca[0, :, :] = cca_front.astype(float)
     cca[:, :] = cca_front.astype(float)
     
