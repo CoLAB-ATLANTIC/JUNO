@@ -201,10 +201,10 @@ def eddies_arrays(eddie_cyc_lons, eddie_cyc_lats, centro_cyc_x, centro_cyc_y, ed
     plt.xlim([-20, -4]);
     plt.ylim([33, 46]);
     plt.axis('off');
-    plt.savefig('/home/luisfigueiredo/JUNO/data/AVISO_images/shape_cyc_' + file_last_date_str + '.png')
+    plt.savefig('/home/colabatlantic2/projects/JUNO/data/AVISO_images/shape_cyc_' + file_last_date_str + '.png')
     
     #array with cyclonic shape data
-    im_cyc = cv2.imread('/home/luisfigueiredo/JUNO/data/AVISO_images/shape_cyc_' + file_last_date_str + '.png')
+    im_cyc = cv2.imread('/home/colabatlantic2/projects/JUNO/data/AVISO_images/shape_cyc_' + file_last_date_str + '.png')
     array_cyc_shape = cv2.cvtColor(im_cyc, cv2.COLOR_BGR2GRAY).astype('float32')    # BGR -> GRAYSCALE
     array_cyc_shape[array_cyc_shape<255] = 0
     array_cyc_shape[array_cyc_shape==255] = np.nan
@@ -219,9 +219,9 @@ def eddies_arrays(eddie_cyc_lons, eddie_cyc_lats, centro_cyc_x, centro_cyc_y, ed
     plt.xlim([-20, -4]);
     plt.ylim([33, 46]);
     plt.axis('off');
-    plt.savefig('/home/luisfigueiredo/JUNO/data/AVISO_images/centers_cyc_' + file_last_date_str + '.png')
+    plt.savefig('/home/colabatlantic2/projects/JUNO/data/AVISO_images/centers_cyc_' + file_last_date_str + '.png')
     #array with cyclonic centroids data
-    im_cyc_centroids = cv2.imread('/home/luisfigueiredo/JUNO/data/AVISO_images/centers_cyc_' + file_last_date_str + '.png')
+    im_cyc_centroids = cv2.imread('/home/colabatlantic2/projects/JUNO/data/AVISO_images/centers_cyc_' + file_last_date_str + '.png')
     array_cyc_centroids = cv2.cvtColor(im_cyc_centroids, cv2.COLOR_BGR2GRAY).astype('float32')   # BGR -> GRAYSCALE
     array_cyc_centroids[array_cyc_centroids<255] = 0
     array_cyc_centroids[array_cyc_centroids==255] = np.nan
@@ -235,9 +235,9 @@ def eddies_arrays(eddie_cyc_lons, eddie_cyc_lats, centro_cyc_x, centro_cyc_y, ed
     plt.xlim([-20, -4]);
     plt.ylim([33, 46]);
     plt.axis('off');
-    plt.savefig('/home/luisfigueiredo/JUNO/data/AVISO_images/shape_anti_' + file_last_date_str + '.png')
+    plt.savefig('/home/colabatlantic2/projects/JUNO/data/AVISO_images/shape_anti_' + file_last_date_str + '.png')
     #array with anticyclonic shape data
-    im_anti = cv2.imread('/home/luisfigueiredo/JUNO/data/AVISO_images/shape_anti_' + file_last_date_str + '.png')
+    im_anti = cv2.imread('/home/colabatlantic2/projects/JUNO/data/AVISO_images/shape_anti_' + file_last_date_str + '.png')
     array_anti_shape = cv2.cvtColor(im_anti, cv2.COLOR_BGR2GRAY).astype('float32')    # BGR -> GRAYSCALE
     array_anti_shape[array_anti_shape<255] = 0
     array_anti_shape[array_anti_shape==255] = np.nan
@@ -251,9 +251,9 @@ def eddies_arrays(eddie_cyc_lons, eddie_cyc_lats, centro_cyc_x, centro_cyc_y, ed
     plt.xlim([-20, -4]);
     plt.ylim([33, 46]);
     plt.axis('off');
-    plt.savefig('/home/luisfigueiredo/JUNO/data/AVISO_images/centers_anti_' + file_last_date_str + '.png')
+    plt.savefig('/home/colabatlantic2/projects/JUNO/data/AVISO_images/centers_anti_' + file_last_date_str + '.png')
     #array with anticyclonic centroids data
-    im_anti_centroids = cv2.imread('/home/luisfigueiredo/JUNO/data/AVISO_images/centers_anti_' + file_last_date_str + '.png')
+    im_anti_centroids = cv2.imread('/home/colabatlantic2/projects/JUNO/data/AVISO_images/centers_anti_' + file_last_date_str + '.png')
     array_anti_centroids = cv2.cvtColor(im_anti_centroids, cv2.COLOR_BGR2GRAY).astype('float32') # BGR -> GRAYSCALE
     array_anti_centroids[array_anti_centroids<255] = 0
     array_anti_centroids[array_anti_centroids==255] = np.nan
@@ -283,7 +283,7 @@ def request_eddy_filenames():
 
 def create_netcdf(data_final_str, array_cyc_shape, array_cyc_centroids, array_anti_shape, array_anti_centroids):
     
-    nc_file = '/home/luisfigueiredo/JUNO/data/AVISO_netcdf/eddies_' + data_final_str + '.nc'
+    nc_file = '/home/colabatlantic2/projects/JUNO/data/AVISO_netcdf/eddies_' + data_final_str + '.nc'
 
     if os.path.exists(nc_file):
         os.remove(nc_file)
@@ -340,7 +340,7 @@ def main():
 
     # Check if there are files in the folder AVISO_data. If so the files in that folder they will have the following format:
     #  cyclonic_date.nc                             OR                        anticyclonic_date.nc
-    if os.listdir('/home/luisfigueiredo/JUNO/data/AVISO_data') == []:       #if the folder AVISO_data is empty
+    if os.listdir('/home/colabatlantic2/projects/JUNO/data/AVISO_data') == []:       #if the folder AVISO_data is empty
         
         #get the html content of the page to get the name of the files we wish to download
         cyclonic_name, anticyclonic_name = request_eddy_filenames()
@@ -350,38 +350,38 @@ def main():
         last_date_str = x.split('.')[0]
 
         #get eddies credentials (username and password) that are hidden as environment variables
-        eddies_user = "luis.leao.figueiredo.23@gmail.com"
-        eddies_pass = "17PLqM"
-        #eddies_user = os.environ.get('EDDIES_USER')
-        #eddies_pass = os.environ.get('EDDIES_PASS')
+        #eddies_user = "luis.leao.figueiredo.23@gmail.com"
+        #eddies_pass = "17PLqM"
+        eddies_user = os.environ.get('EDDIES_USER')
+        eddies_pass = os.environ.get('EDDIES_PASS')
         
         # download the 2 files which filenames were identified through the request made in the HTML content of the AVISO website
-        download_eddie(filename=cyclonic_name, path = '/home/luisfigueiredo/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
-        download_eddie(filename=anticyclonic_name, path = '/home/luisfigueiredo/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
+        download_eddie(filename=cyclonic_name, path = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
+        download_eddie(filename=anticyclonic_name, path = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
         
         #last slicing according to certain variable boundaries (coordinates and time)
         #this will result in 2 much smaller netcdfs (cyclonic and anticyclonic)
-        slice_netcdf(filepath = '/home/luisfigueiredo/JUNO/data/AVISO_data/', input_filename=cyclonic_name[:-3] + '_slice.nc', lat_min=35, lat_max=45, lon_min=330, lon_max=360, data_final_str=last_date_str, eddie_type='cyclonic')
-        slice_netcdf(filepath = '/home/luisfigueiredo/JUNO/data/AVISO_data/', input_filename=anticyclonic_name[:-3] + '_slice.nc', lat_min=35, lat_max=45, lon_min=330, lon_max=360, data_final_str=last_date_str, eddie_type='anticyclonic')
+        slice_netcdf(filepath = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', input_filename=cyclonic_name[:-3] + '_slice.nc', lat_min=35, lat_max=45, lon_min=330, lon_max=360, data_final_str=last_date_str, eddie_type='cyclonic')
+        slice_netcdf(filepath = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', input_filename=anticyclonic_name[:-3] + '_slice.nc', lat_min=35, lat_max=45, lon_min=330, lon_max=360, data_final_str=last_date_str, eddie_type='anticyclonic')
 
         #I think that after this final sliced we can delete the bigger netCDF (for space, memory and cleaning purposes)
-        os.remove('/home/luisfigueiredo/JUNO/data/AVISO_data/'+ cyclonic_name)
-        os.remove('/home/luisfigueiredo/JUNO/data/AVISO_data/'+ anticyclonic_name)
-        os.remove('/home/luisfigueiredo/JUNO/data/AVISO_data/'+ cyclonic_name[:-3] + '_slice.nc')
-        os.remove('/home/luisfigueiredo/JUNO/data/AVISO_data/'+ anticyclonic_name[:-3] + '_slice.nc')
+        os.remove('/home/colabatlantic2/projects/JUNO/data/AVISO_data/'+ cyclonic_name)
+        os.remove('/home/colabatlantic2/projects/JUNO/data/AVISO_data/'+ anticyclonic_name)
+        os.remove('/home/colabatlantic2/projects/JUNO/data/AVISO_data/'+ cyclonic_name[:-3] + '_slice.nc')
+        os.remove('/home/colabatlantic2/projects/JUNO/data/AVISO_data/'+ anticyclonic_name[:-3] + '_slice.nc')
             
         #eddies tracking and identification for the cyclonic and anticyclonic data
-        eddie_cyc_lats, eddie_cyc_lons, centro_cyc_y, centro_cyc_x = eddie_tracking(filepath='/home/luisfigueiredo/JUNO/data/AVISO_data/', filename='cyclonic_' + last_date_str + '.nc')
-        eddie_anti_lats, eddie_anti_lons, centro_anti_y, centro_anti_x = eddie_tracking(filepath='/home/luisfigueiredo/JUNO/data/AVISO_data/', filename='anticyclonic_' + last_date_str + '.nc')
+        eddie_cyc_lats, eddie_cyc_lons, centro_cyc_y, centro_cyc_x = eddie_tracking(filepath='/home/colabatlantic2/projects/JUNO/data/AVISO_data/', filename='cyclonic_' + last_date_str + '.nc')
+        eddie_anti_lats, eddie_anti_lons, centro_anti_y, centro_anti_x = eddie_tracking(filepath='/home/colabatlantic2/projects/JUNO/data/AVISO_data/', filename='anticyclonic_' + last_date_str + '.nc')
         
         #visualize the eddies. (Then we can maybe save the plot as a png)
         array_cyc_shape, array_cyc_centroids, array_anti_shape, array_anti_centroids = eddies_arrays(eddie_cyc_lons, eddie_cyc_lats, centro_cyc_x, centro_cyc_y, 
                                                                     eddie_anti_lons, eddie_anti_lats, centro_anti_x,centro_anti_y, file_last_date_str = last_date_str)
 
 
-        exist_path = os.path.exists('/home/luisfigueiredo/JUNO/data/AVISO_netcdf')    #check if folder AVISO_netcdf exists in data folder
+        exist_path = os.path.exists('/home/colabatlantic2/projects/JUNO/data/AVISO_netcdf')    #check if folder AVISO_netcdf exists in data folder
         if not exist_path:                                                                         #if doesn't exist
-            os.makedirs('/home/luisfigueiredo/JUNO/data/AVISO_netcdf')                   # create the folder
+            os.makedirs('/home/colabatlantic2/projects/JUNO/data/AVISO_netcdf')                   # create the folder
             
             
         # CREATION OF THE NETCDF   
@@ -394,7 +394,7 @@ def main():
     else:    #if the folder AVISO_data is not empty
         #we want to extract the most recent date for the files in the directory
         list_dates = [] 
-        for filename in os.listdir('/home/luisfigueiredo/JUNO/data/AVISO_data'):
+        for filename in os.listdir('/home/colabatlantic2/projects/JUNO/data/AVISO_data'):
             x  = filename.split('_')[-1]
             data = x.split('.')[0]
             list_dates.append(data)
@@ -417,18 +417,18 @@ def main():
             pass
         elif last_date > date_recent:        
             #get eddies credentials (username and password) that are hidden as environment variables
-            eddies_user = "luis.leao.figueiredo.23@gmail.com"
-            eddies_pass = "17PLqM"
-            #eddies_user = os.environ.get('EDDIES_USER')
-            #eddies_pass = os.environ.get('EDDIES_PASS')
+            #eddies_user = "luis.leao.figueiredo.23@gmail.com"
+            #eddies_pass = "17PLqM"
+            eddies_user = os.environ.get('EDDIES_USER')
+            eddies_pass = os.environ.get('EDDIES_PASS')
         
             #make the donwload of the 2 files (cyclonic and anticyclonic) that were identified through the request in the HTML of the AVISO website
-            download_eddie(filename=cyclonic_name, path = '/home/luisfigueiredo/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
-            download_eddie(filename=anticyclonic_name, path = '/home/luisfigueiredo/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
+            download_eddie(filename=cyclonic_name, path = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
+            download_eddie(filename=anticyclonic_name, path = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
         
             #we can remove the bigger netcdf files
-            os.remove('/home/luisfigueiredo/JUNO/data/AVISO_data/'+ cyclonic_name)
-            os.remove('/home/luisfigueiredo/JUNO/data/AVISO_data/'+ anticyclonic_name)
+            os.remove('/home/colabatlantic2/projects/JUNO/data/AVISO_data/'+ cyclonic_name)
+            os.remove('/home/colabatlantic2/projects/JUNO/data/AVISO_data/'+ anticyclonic_name)
         
             #Now we want
             while last_date > date_recent:
@@ -437,21 +437,21 @@ def main():
                 data_final_str = data_final.strftime('%Y%m%d')
 
                 #last slicing according to certain variable boundaries (coordinates and time)
-                slice_netcdf(filepath = '/home/luisfigueiredo/JUNO/data/AVISO_data/', input_filename=cyclonic_name[:-3] + '_slice.nc', lat_min=35, lat_max=45, lon_min=330, lon_max=360, data_final_str=data_final_str, eddie_type='cyclonic')
-                slice_netcdf(filepath = '/home/luisfigueiredo/JUNO/data/AVISO_data/', input_filename=anticyclonic_name[:-3] + '_slice.nc', lat_min=35, lat_max=45, lon_min=330, lon_max=360, data_final_str=data_final_str, eddie_type='anticyclonic')
+                slice_netcdf(filepath = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', input_filename=cyclonic_name[:-3] + '_slice.nc', lat_min=35, lat_max=45, lon_min=330, lon_max=360, data_final_str=data_final_str, eddie_type='cyclonic')
+                slice_netcdf(filepath = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', input_filename=anticyclonic_name[:-3] + '_slice.nc', lat_min=35, lat_max=45, lon_min=330, lon_max=360, data_final_str=data_final_str, eddie_type='anticyclonic')
             
                 #eddies tracking and identification for the cyclonic and anticyclonic data
-                eddie_cyc_lats, eddie_cyc_lons, centro_cyc_y, centro_cyc_x = eddie_tracking(filepath='/home/luisfigueiredo/JUNO/data/AVISO_data/', filename='cyclonic_' + data_final_str + '.nc')
-                eddie_anti_lats, eddie_anti_lons, centro_anti_y, centro_anti_x = eddie_tracking(filepath='/home/luisfigueiredo/JUNO/data/AVISO_data/', filename='anticyclonic_' + data_final_str + '.nc')
+                eddie_cyc_lats, eddie_cyc_lons, centro_cyc_y, centro_cyc_x = eddie_tracking(filepath='/home/colabatlantic2/projects/JUNO/data/AVISO_data/', filename='cyclonic_' + data_final_str + '.nc')
+                eddie_anti_lats, eddie_anti_lons, centro_anti_y, centro_anti_x = eddie_tracking(filepath='/home/colabatlantic2/projects/JUNO/data/AVISO_data/', filename='anticyclonic_' + data_final_str + '.nc')
     
                 #visualize the eddies. (Then we can maybe save the plot as a png)
                 array_cyc_shape, array_cyc_centroids, array_anti_shape, array_anti_centroids = eddies_arrays(eddie_cyc_lons, eddie_cyc_lats, centro_cyc_x, centro_cyc_y, 
                                                                 eddie_anti_lons, eddie_anti_lats, centro_anti_x,centro_anti_y, file_last_date_str = data_final_str)
 
 
-                exist_path = os.path.exists('/home/luisfigueiredo/JUNO/data/AVISO_netcdf')    #check if folder AVISO_netcdf exists in data folder
+                exist_path = os.path.exists('/home/colabatlantic2/projects/JUNO/data/AVISO_netcdf')    #check if folder AVISO_netcdf exists in data folder
                 if not exist_path:                                                                         #if doesn't exist
-                    os.makedirs('/home/luisfigueiredo/JUNO/data/AVISO_netcdf')                   # create the folder
+                    os.makedirs('/home/colabatlantic2/projects/JUNO/data/AVISO_netcdf')                   # create the folder
         
         
                 #  CREATION OF THE NETCDF   
@@ -462,8 +462,8 @@ def main():
                 last_date = last_date - timedelta(days=1)
             
             #in the end we can remove the sliced netcdfs so basically we will only have the tiny netcdfs with those certain boundaries
-            os.remove('/home/luisfigueiredo/JUNO/data/AVISO_data/'+ cyclonic_name[:-3] + '_slice.nc')
-            os.remove('/home/luisfigueiredo/JUNO/data/AVISO_data/'+ anticyclonic_name[:-3] + '_slice.nc')
+            os.remove('/home/colabatlantic2/projects/JUNO/data/AVISO_data/'+ cyclonic_name[:-3] + '_slice.nc')
+            os.remove('/home/colabatlantic2/projects/JUNO/data/AVISO_data/'+ anticyclonic_name[:-3] + '_slice.nc')
         
 
 
