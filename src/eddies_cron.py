@@ -338,6 +338,7 @@ def create_netcdf(data_final_str, array_cyc_shape, array_cyc_centroids, array_an
 def main():
     
 
+
     # Check if there are files in the folder AVISO_data. If so the files in that folder they will have the following format:
     #  cyclonic_date.nc                             OR                        anticyclonic_date.nc
     if os.listdir('/home/colabatlantic2/projects/JUNO/data/AVISO_data') == []:       #if the folder AVISO_data is empty
