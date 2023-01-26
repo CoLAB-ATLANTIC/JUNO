@@ -341,7 +341,7 @@ def main():
 
     # Check if there are files in the folder AVISO_data. If so the files in that folder they will have the following format:
     #  cyclonic_date.nc                             OR                        anticyclonic_date.nc
-    if os.listdir('/home/colabatlantic2/projects/JUNO/data/AVISO_eddies') == []:       #if the folder AVISO_data is empty
+    if os.listdir('/home/colabatlantic2/projects/JUNO/data/AVISO_data') == []:       #if the folder AVISO_data is empty
         
         #get the html content of the page to get the name of the files we wish to download
         cyclonic_name, anticyclonic_name = request_eddy_filenames()
