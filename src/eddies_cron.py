@@ -337,7 +337,10 @@ def create_netcdf(data_final_str, array_cyc_shape, array_cyc_centroids, array_an
 
 def main():
     
-
+    
+    exist_path = os.path.exists('/home/luisfigueiredo/JUNO/data/AVISO_images')    #check if folder AVISO_netcdf exists in data folder
+    if not exist_path:                                                                         #if doesn't exist
+        os.makedirs('/home/luisfigueiredo/JUNO/data/AVISO_images')                   # create the folder
 
     # Check if there are files in the folder AVISO_data. If so the files in that folder they will have the following format:
     #  cyclonic_date.nc                             OR                        anticyclonic_date.nc
