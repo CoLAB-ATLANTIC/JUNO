@@ -97,6 +97,8 @@ def download_sst(path, date, mur_j0, mur_j1, mur_i0, mur_i1, replace):
         date.year) + '/'
     filename = opendap_dir + "{0:0>3}".format(str(date.dayofyear)) + '/' + date.strftime(
         "%Y%m%d") + '090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc.nc4'
+    
+    breakpoint()
     filenameout = path + "sst_" + date.strftime("%Y%m%d") + '.nc'
     fileget = filename + '?analysed_sst[0:1:0][' + str(mur_j0) + ':1:' + str(mur_j1) + '][' + str(mur_i0) + ':1:' + str(
         mur_i1) + ']'
@@ -318,7 +320,9 @@ def real_sst_image(data_xarray):
 def main():
     
     base_path = os.getcwd()
-    base_path = os.path.join(base_path, 'projects/JUNO')      #servidor
+    #base_path = os.path.join(base_path, 'projects/JUNO')      #servidor
+    
+    base_path = os.path.join(base_path, '../')      #local machine
     
     #download MUR data for the day before yesterday
     day_txt = (date.today() - timedelta(days=2)).strftime('%Y%m%d')
