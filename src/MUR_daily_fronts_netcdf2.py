@@ -21,8 +21,7 @@ import os
 import cv2
 import matplotlib
 from scipy.ndimage import gaussian_filter
-import datetime
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import wget
 from math import floor
 from pydap.client import open_url
@@ -35,98 +34,152 @@ import CayulaCornillon_xarray
 
 
 ################################################ DOWNLOAD MUR DATA ##################################################
-def boundingindex(dmin, dint, boundary0, boundary1):
-    """
-    get boundaries values to download the data already cropped
-    """
-    inx0 = max(int(floor((boundary0 - dmin) / dint)), 0)
-    inx1 = max(int(floor((boundary1 - dmin) / dint)), 0)
-    if inx0 > inx1:
-        atemp = inx0
-        inx0 = inx1
-        inx1 = atemp
-    return [inx0, inx1]
+
+import dask
+import requests
+#Allows us to visualize the dask progress for parallel operations
+from dask.diagnostics import ProgressBar
+ProgressBar().register()
+
+import netrc
+from subprocess import Popen
+from platform import system
+from getpass import getpass
+
+import urllib
+from urllib import request, parse
+from http.cookiejar import CookieJar
+import json
 
 
-def get_mur_params(lon_box, lat_box):
+def setup_earthdata_login_auth(endpoint):
     """
-    Check sample file to get parameters for sst
+    Set up the request library so that it authenticates against the given Earthdata Login
+    endpoint and is able to track cookies between requests.  This looks in the .netrc file
+    first and if no credentials are found, it prompts for them.
+    Valid endpoints include:
+        urs.earthdata.nasa.gov - Earthdata Login production
     """
-    mur_ncin = open_url(
-        'https://podaac-opendap.jpl.nasa.gov/opendap/allData/ghrsst/data/GDS2/L4/GLOB/JPL/MUR/v4.1/2018/002/20180102090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc')
-    lon = mur_ncin['lon']
-    lat = mur_ncin['lat']
-    lon_step = np.mean(np.diff(lon))
-    lat_step = np.mean(np.diff(lat))
-    [mur_i0, mur_i1] = boundingindex(lon[0][0].data, lon_step, lon_box[0], lon_box[1])
-    [mur_j0, mur_j1] = boundingindex(lat[0][0].data, lat_step, lat_box[0], lat_box[1])
+    try:
+        username = os.environ.get("MUR_USERNAME")
+        password = os.environ.get("MUR_PASSWORD")
+        
+        #username, _, password = netrc.netrc().authenticators(endpoint)
+    except (FileNotFoundError, TypeError):
+        # FileNotFound = There's no .netrc file
+        # TypeError = The endpoint isn't in the netrc file, causing the above to try unpacking None
+        print('Please provide your Earthdata Login credentials to allow data access')
+        print('Your credentials will only be passed to %s and will not be exposed in Jupyter' % (endpoint))
+        username = input('Username:')
+        password = getpass.getpass()
 
-    return mur_i0, mur_i1, mur_j0, mur_j1
+    
+    manager = request.HTTPPasswordMgrWithDefaultRealm()
+    manager.add_password(None, endpoint, username, password)
+    auth = request.HTTPBasicAuthHandler(manager)
 
-
-def download_from_url(fileget, filenameout, replace, printiti):
-    """
-    function that tries to download data from "fileget" if the data didn't previously exist,
-    the user asked to replace the old data, or the file has 0 bytes
-    """
-    exists = os.path.exists(filenameout)
-    if exists:
-        file_size = os.path.getsize(filenameout)
-    else:
-        file_size = 1
-    if (not exists) or (replace and exists) or (file_size == 0):
-        if exists:
-            os.remove(filenameout)
-        try:
-            return wget.download(fileget, out=filenameout, bar=None)
-        except Exception as e:
-            if printiti:
-                print(e)
-                print("Error downloading")
-                print("Download error url: " + fileget)
-            return e
-    return filenameout
-
-def download_sst(path, date, mur_j0, mur_j1, mur_i0, mur_i1, replace):
+    jar = CookieJar()
+    processor = request.HTTPCookieProcessor(jar)
+    opener = request.build_opener(auth, processor)
+    request.install_opener(opener)
+    
+    
+    
+def request_data(date_str):
     
     """
-    Function to download individual days of MUR data
+    Function to request the MUR data. date_str is a string in the format: %Y-%m-%d
+    The data will be downloaded to the MUR_daily_data folder which is inside the data folder
+    We return the basename to know which netcdf file we just donwloaded to the MUR_daily_data folder
     """
+    date_string = date_str + 'T09:00:00Z'
     
-    opendap_dir = 'https://podaac-opendap.jpl.nasa.gov/opendap/allData/ghrsst/data/GDS2/L4/GLOB/JPL/MUR/v4.1/' + str(
-        date.year) + '/'
-    filename = opendap_dir + "{0:0>3}".format(str(date.dayofyear)) + '/' + date.strftime(
-        "%Y%m%d") + '090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc.nc4'
+    url = 'https://cmr.earthdata.nasa.gov/search/granules.umm_json?collection_concept_id=C1996881146-POCLOUD&temporal=' + date_string + ',' + date_string + '&pageSize=365'
     
-    breakpoint()
-    filenameout = path + "sst_" + date.strftime("%Y%m%d") + '.nc'
-    fileget = filename + '?analysed_sst[0:1:0][' + str(mur_j0) + ':1:' + str(mur_j1) + '][' + str(mur_i0) + ':1:' + str(
-        mur_i1) + ']'
-    download_from_url(fileget, filenameout, replace, 1)
-    return
+    #CMR Link to use
+    #https://cmr.earthdata.nasa.gov/search/granules.umm_json?collection_concept_id=C1625128926-GHRC_CLOUD&temporal=2019-01-01T10:00:00Z,2019-12-31T23:59:59Z
+    r = requests.get(url)
+    response_body = r.json()
+    
+    
+    od_files = []
+    for itm in response_body['items']:
+        for urls in itm['umm']['RelatedUrls']:
+            if 'OPeNDAP' in urls['Description']:
+                od_files.append(urls['URL'])
+
+    print(od_files)
+    
+    
+    base_path = os.getcwd()
+    base_path = os.path.join(base_path, '../data')
+
+
+    exist_path = os.path.exists(os.path.join(base_path, 'MUR_daily_data'))   #check if folder MUR_daily_data exists in data folder
+    if not exist_path:                                                            #if it don't exist:
+        os.makedirs(os.path.join(base_path, 'MUR_daily_data'))  
+
+
+    for f in od_files:
+        print (" opening " + f)
+        data_url = f'{f}.dap.nc4'
+
+        # The notation below is [start index, step, end index]
+        # lat[ /lat= 0..17998] start index. = -90
+        # lon[ /lon= 0..35999] start index. = -180
+        # time[ /time= 0..0] 
+
+        required_variables = {'analysed_sst[0:1:0][12499:1:13499][16099:1:17499]',
+                              'lat[12499:1:13499]',     # [35, 45]
+                              'lon[16099:1:17499]',     # [-19, -5]
+                              'time[0:1:0]'}
+
+        basename = os.path.basename(data_url)
+        request_params = {'dap4.ce': ';'.join(required_variables)}
+        #identity encoding to work around an issue with server side response compression (??)
+        response = requests.get(data_url, params=request_params,  headers={'Accept-Encoding': 'identity'})
+
+        basename = os.path.join('../data/MUR_daily_data', basename)
+        
+    
+
+        if response.ok:
+            with open(basename, 'wb') as file_handler:
+                file_handler.write(response.content)
+        else:
+            print(f'Request failed: {response.text}')
+            
+            
+        # Replace "-" with ""
+        filename_new = 'sst_' + date_str.replace("-", "") + '.nc'
+        basepath_new = os.path.join('../data/MUR_daily_data', filename_new)
+        
+        os.rename(basename, basepath_new)
+            
+        return basepath_new
+
+
 
 
 
 ######################################### IMPORT DATA #######################################################
 
-def get_data(data, base_path):
+def get_data(nc_path):
     
     """
-    Function to get our netCDF file that is stored in the data directory inside the MUR_seasonal_data folder and convert it to a dataframe.
-    The data parameter is the string name of the netCDF file we want to import
+    Function to get our netCDF file that is stored in the MUR_daily_data folder
+    and convert it to an xarray. The nc_name parameter is the string name of the netCDF file we want to import
     """
     
-    base_path = base_path
-    data_folder = os.path.join(base_path, "data/MUR_daily_data")  
+    base_path = os.getcwd()
+    file_path = os.path.join(base_path, nc_path)  
     
-    nc_path = os.path.join(data_folder, data)
-    data_xarray = xr.load_dataset(nc_path)
+    xarray_mur = xr.open_mfdataset(file_path, engine='netcdf4')
     
-    #In the case the temperature is in Kelvin (Convert to Celsius)
-    data_xarray['analysed_sst'] = data_xarray['analysed_sst'] - 273.15
+    #convert temperature from Kelvin to Celsius
+    xarray_mur['analysed_sst'] = xarray_mur['analysed_sst'] - 273.15
     
-    return data_xarray
-
+    return xarray_mur
 
 #################################### CANNY ALGORITHM ##########################################################
 
@@ -320,9 +373,9 @@ def real_sst_image(data_xarray):
 def main():
     
     base_path = os.getcwd()
-    #base_path = os.path.join(base_path, 'projects/JUNO')      #servidor
+    base_path = os.path.join(base_path, 'projects/JUNO')      #servidor
     
-    base_path = os.path.join(base_path, '../')      #local machine
+    #base_path = os.path.join(base_path, '../')      #local machine
     
     #download MUR data for the day before yesterday
     day_txt = (date.today() - timedelta(days=2)).strftime('%Y%m%d')
@@ -336,12 +389,59 @@ def main():
     if os.path.exists(exist_sst_file):
         os.remove(exist_sst_file)
         
+
+
+        
+        
+    # urs = 'urs.earthdata.nasa.gov'    # Earthdata URL endpoint for authentication
+    # prompts = ['Enter NASA Earthdata Login Username: ',
+    #         'Enter NASA Earthdata Login Password: ']
+
+    # # Determine the OS (Windows machines usually use an '_netrc' file)
+    # netrc_name = "_netrc" if system()=="Windows" else ".netrc"
     
-    download_sst(path = os.path.join(base_path, 'data/MUR_daily_data/'), date = pd.to_datetime(day_txt), mur_j0=12499, mur_j1=13499, mur_i0=16099, mur_i1=17499, replace=None)
+
+    # # Determine if netrc file exists, and if so, if it includes NASA Earthdata Login Credentials
+    # try:
+    #     netrcDir = os.path.expanduser(f"~/{netrc_name}")
+    #     netrc(netrcDir).authenticators(urs)[0]
+
+    # # Below, create a netrc file and prompt user for NASA Earthdata Login Username and Password
+    # except FileNotFoundError:
+    #     homeDir = os.path.expanduser("~")
+    #     Popen('touch {0}{2} | echo machine {1} >> {0}{2}'.format(homeDir + os.sep, urs, netrc_name), shell=True)
+    #     Popen('echo login {} >> {}{}'.format(getpass(prompt=prompts[0]), homeDir + os.sep, netrc_name), shell=True)
+    #     Popen('echo \'password {} \'>> {}{}'.format(getpass(prompt=prompts[1]), homeDir + os.sep, netrc_name), shell=True)
+    #     # Set restrictive permissions
+    #     Popen('chmod 0600 {0}{1}'.format(homeDir + os.sep, netrc_name), shell=True)
+
+    #     # Determine OS and edit netrc file if it exists but is not set up for NASA Earthdata Login
+    # except TypeError:
+    #     homeDir = os.path.expanduser("~")
+        
+    #     Popen('echo machine {1} >> {0}{2}'.format(homeDir + os.sep, urs, netrc_name), shell=True)
+    #     Popen('echo login {} >> {}{}'.format(getpass(prompt=prompts[0]), homeDir + os.sep, netrc_name), shell=True)
+    #     Popen('echo \'password {} \'>> {}{}'.format(getpass(prompt=prompts[1]), homeDir + os.sep, netrc_name), shell=True)
             
+        
+        
+        
+        
+    edl="urs.earthdata.nasa.gov"
+
+    setup_earthdata_login_auth(edl)
     
-    xarray_mur = get_data(data = 'sst_' + day_txt + '.nc', base_path=base_path)     #convert the netcdf with MUR data to a dataframe to later apply the algorithms
+
+    # Convert the date string to a datetime object
+    date_object = datetime.strptime(day_txt, "%Y%m%d")
+    # Convert the datetime object back to a formatted string
+    formatted_date_string = datetime.strftime(date_object, "%Y-%m-%d")
+        
+    nc_path = request_data(date_str=formatted_date_string) 
     
+    xarray_mur = get_data(nc_path)
+        
+        
     #breakpoint()
     sst_image = real_sst_image(xarray_mur)
     
@@ -361,7 +461,11 @@ def main():
     ################################################### CREATION OF THE NETCDF   #######################################################
 
     nc_file = os.getcwd()
-    nc_file = os.path.join(nc_file, 'projects/JUNO/data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')
+    nc_file = os.path.join(nc_file, 'projects/JUNO/data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')    #SERVIDOR  
+    
+    #nc_file = os.path.join(nc_file, '../data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')    #LOCAL MACHINE
+    
+    
     
     if os.path.exists(nc_file):
         os.remove(nc_file)
