@@ -112,7 +112,11 @@ def request_data(date_str):
     
     
     base_path = os.getcwd()
-    base_path = os.path.join(base_path, '../data')
+   # base_path = os.path.join(base_path, '../data')      #local machine
+    
+    base_path = os.path.join(base_path, 'projects/JUNO/data')    #SERVIDOR
+    
+    
 
 
     exist_path = os.path.exists(os.path.join(base_path, 'MUR_daily_data'))   #check if folder MUR_daily_data exists in data folder
@@ -139,7 +143,9 @@ def request_data(date_str):
         #identity encoding to work around an issue with server side response compression (??)
         response = requests.get(data_url, params=request_params,  headers={'Accept-Encoding': 'identity'})
 
-        basename = os.path.join('../data/MUR_daily_data', basename)
+        #basename = os.path.join('../data/MUR_daily_data', basename)    #local machine
+        
+        basename = os.path.join('projects/JUNO/data/MUR_daily_data', basename)    #SERVIDOR
         
     
 
@@ -152,7 +158,9 @@ def request_data(date_str):
             
         # Replace "-" with ""
         filename_new = 'sst_' + date_str.replace("-", "") + '.nc'
-        basepath_new = os.path.join('../data/MUR_daily_data', filename_new)
+        #basepath_new = os.path.join('../data/MUR_daily_data', filename_new)    #Local Machine
+        
+        basepath_new = os.path.join('projects/JUNO/data/MUR_daily_data', filename_new)   #SERVIDOR
         
         os.rename(basename, basepath_new)
             
