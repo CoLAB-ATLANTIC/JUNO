@@ -64,6 +64,7 @@ def setup_earthdata_login_auth(endpoint):
         username = os.environ.get("MUR_USERNAME")
         password = os.environ.get("MUR_PASSWORD")
         
+           
         #username, _, password = netrc.netrc().authenticators(endpoint)
     except (FileNotFoundError, TypeError):
         # FileNotFound = There's no .netrc file
@@ -72,6 +73,9 @@ def setup_earthdata_login_auth(endpoint):
         print('Your credentials will only be passed to %s and will not be exposed in Jupyter' % (endpoint))
         username = input('Username:')
         password = getpass.getpass()
+        
+    
+    #breakpoint()
 
     
     manager = request.HTTPPasswordMgrWithDefaultRealm()
@@ -107,12 +111,10 @@ def request_data(date_str):
         for urls in itm['umm']['RelatedUrls']:
             if 'OPeNDAP' in urls['Description']:
                 od_files.append(urls['URL'])
-
-    print(od_files)
     
     
     base_path = os.getcwd()
-   # base_path = os.path.join(base_path, '../data')      #local machine
+    #base_path = os.path.join(base_path, '../data')      #local machine
     
     base_path = os.path.join(base_path, 'projects/JUNO/data')    #SERVIDOR
     
