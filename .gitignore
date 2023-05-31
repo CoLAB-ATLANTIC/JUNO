@@ -9,3 +9,4 @@ notebooks/front.tif
 notebooks/mask.tif
 notebooks/grdir.tif
 notebooks/grad_dir.tif
+src/*.log
