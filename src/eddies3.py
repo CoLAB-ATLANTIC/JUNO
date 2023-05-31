@@ -429,6 +429,8 @@ def main():
             #we can remove the bigger netcdf files
             os.remove('/home/luisfigueiredo/JUNO/data/AVISO_data/'+ cyclonic_name)
             os.remove('/home/luisfigueiredo/JUNO/data/AVISO_data/'+ anticyclonic_name)
+            #os.remove('/home/luisfigueiredo/JUNO/data/AVISO_data/'+ cyclonic_name[:-3] + '_slice.nc')
+            #os.remove('/home/luisfigueiredo/JUNO/data/AVISO_data/'+ anticyclonic_name[:-3] + '_slice.nc')
         
             #Now we want
             while last_date > date_recent:
@@ -469,7 +471,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
     
 
         
