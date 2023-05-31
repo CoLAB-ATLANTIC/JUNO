@@ -208,136 +208,121 @@ def main():
     #base_path = os.path.join(base_path, '../')      #local machine
     
     
-    # Get the current date
-    current_date = datetime.now()
-    # Create a list to store the dates
-    date_list = []
-    # Generate the dates for the last 30 days
-    for i in range(3, 30):
-        # Format the date as "%Y%m%d" and append it to the list
-        date_list.append((current_date - timedelta(days=i)).strftime("%Y%m%d"))
-
-
-    for data in date_list:
-        
-        day_txt = data
-    
-        #download MUR data for the day before yesterday
-        #day_txt = (date.today() - timedelta(days=3)).strftime('%Y%m%d')
-        
-        
-        date_obj = datetime.strptime(day_txt, "%Y%m%d")
-        day_txt_f = datetime.strftime(date_obj, "%Y-%m-%d")
-        
-            
-        exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data'))   #check if folder MUR_dailyu_data exists in data folder
-        if not exist_path:                                                            #if it don't exist:
-            os.makedirs(os.path.join(base_path, 'data/MUR_daily_data'))               #create the folder
-
-        #check if the daily sst data file already exists in the MUR_daily_data folder. If it does delete it  
-        exist_sst_file = os.path.join(base_path, 'data/MUR_daily_data/sst_' + day_txt + '.nc')
-        if os.path.exists(exist_sst_file):
-            os.remove(exist_sst_file)
-            
-            
-            
-    ##################################################### DOWNLOAD MUR DATA ############################################################################
-        
-        url = "https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41.nc?analysed_sst[(" + day_txt_f + "T09:00:00Z):1:(" + day_txt_f + "T09:00:00Z)][(35):1:(45)][(-19):1:(-5)]"
-        
-        output_file = os.path.join(base_path, "data/MUR_daily_data/sst_" + day_txt + '.nc')
-        
-        response = requests.get(url)
-        if response.status_code == 200:
-            with open(output_file, "wb") as f:
-                f.write(response.content)
-            print(f"NetCDF file saved as {output_file}")
-        else:
-            print("Failed to download the NetCDF file.")
-            
-            
-        
-        nc_path = os.path.join(output_file)
-        
-        xarray_mur = get_data(nc_path)
-        
-        
-        sst_image = real_sst_image(xarray_mur)
-        
-        canny_front = canny_front_detection_1day(xarray_mur)
-        
-        boa_front = BOA_aplication(xarray_mur, threshold=0.05)
-        
-        cca_front = CCA_front(xarray_mur)
-            
-
-        exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
-        if not exist_path:                                                                         #if doesn't exist
-            os.makedirs(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))                # create the folder
-            
-            
-            
-        ################################################### CREATION OF THE NETCDF   #######################################################
-
-        nc_file = os.getcwd()
-        nc_file = os.path.join(nc_file, 'projects/JUNO/data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')    #SERVIDOR  
-        
-        #nc_file = os.path.join(nc_file, '../data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')    #LOCAL MACHINE
-        
-        
-        
-        if os.path.exists(nc_file):
-            os.remove(nc_file)
-
-        ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
-
-        ds.title = 'MUR ' + day_txt + ' Fronts Arrays (Xarrays)'
-
-        #create dimensions of the NetCDF file
-        #time = ds.createDimension('time')
-        lat = ds.createDimension('lat', 1001)
-        lon = ds.createDimension('lon', 1401)
-
-        #times = ds.createVariable('time', 'f4', ('time', ))
-        lats = ds.createVariable('lat', 'f4', ('lat', ))
-        lons = ds.createVariable('lon', 'f4', ('lon', ))
-
-        sst_analyzed = ds.createVariable('sst', 'f4', ('lat', 'lon',))    #('lat', 'lon',)
-        sst_analyzed.units = 'C'   #degrees Celsius
-        sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) in ºC relative to the MUR data for that day'
-        #sst_analyzed[0, :, :] = sst
-        sst_analyzed[:, :] = sst_image
-
-
-        canny = ds.createVariable('Canny', 'f4', ('lat', 'lon',))
-        canny.units = 'Unknown'
-        canny.description = 'Array with identyfied fronts through Canny from OpenCV (1-> front), (Nan->not front)'
-        #canny[0, :, :] = canny_front.astype(float)
-        canny[:, :] = canny_front.astype(float)
-        
-        boa = ds.createVariable('BOA', 'f4', ('lat', 'lon',))
-        boa.units = 'Unknown'
-        boa.description = 'Array with identyfied fronts through the Belkin O Reilly Algorithm (temperature gradient). If the gradient is bigger than certain threshold is considered front (1) otherwise Nan'
-        #boa[0, :, :] = boa_front
-        boa[:, :] = boa_front
-        
-        cca = ds.createVariable('CCA', 'f4', ('lat', 'lon',))
-        cca.units = 'Unknown'
-        cca.description = 'Array with identyfied fronts through the Cayula Cornillon Algorithm (1->front) (Nan->not front)'
-        #cca[0, :, :] = cca_front.astype(float)
-        cca[:, :] = cca_front.astype(float)
-        
-        #times.units = 'days since 1-1-1'
-
-        lats[:] = np.linspace(35, 45, 1001)
-        lons[:] = np.linspace(-19, -5, 1401)
+    #download MUR data for the day before yesterday
+    day_txt = (date.today() - timedelta(days=3)).strftime('%Y%m%d')
     
     
-    # date_obj = datetime.datetime.strptime(day_txt, '%Y%m%d')
-        #date_time = date_obj.toordinal()
-        #times[:] = date_time
+    date_obj = datetime.strptime(day_txt, "%Y%m%d")
+    day_txt_f = datetime.strftime(date_obj, "%Y-%m-%d")
+    
+        
+    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data'))   #check if folder MUR_dailyu_data exists in data folder
+    if not exist_path:                                                            #if it don't exist:
+        os.makedirs(os.path.join(base_path, 'data/MUR_daily_data'))               #create the folder
 
-        ds.close()
+    #check if the daily sst data file already exists in the MUR_daily_data folder. If it does delete it  
+    exist_sst_file = os.path.join(base_path, 'data/MUR_daily_data/sst_' + day_txt + '.nc')
+    if os.path.exists(exist_sst_file):
+        os.remove(exist_sst_file)
+        
+        
+        
+##################################################### DOWNLOAD MUR DATA ############################################################################
+    
+    url = "https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41.nc?analysed_sst[(" + day_txt_f + "T09:00:00Z):1:(" + day_txt_f + "T09:00:00Z)][(35):1:(45)][(-19):1:(-5)]"
+    
+    output_file = os.path.join(base_path, "data/MUR_daily_data/sst_" + day_txt + '.nc')
+    
+    response = requests.get(url)
+    if response.status_code == 200:
+        with open(output_file, "wb") as f:
+            f.write(response.content)
+        print(f"NetCDF file saved as {output_file}")
+    else:
+        print("Failed to download the NetCDF file.")
+        
+    
+    nc_path = os.path.join(output_file)
+    
+    xarray_mur = get_data(nc_path)
+    
+    
+    sst_image = real_sst_image(xarray_mur)
+    
+    canny_front = canny_front_detection_1day(xarray_mur)
+    
+    boa_front = BOA_aplication(xarray_mur, threshold=0.05)
+    
+    cca_front = CCA_front(xarray_mur)
+        
+
+    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
+    if not exist_path:                                                                         #if doesn't exist
+        os.makedirs(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))                # create the folder
+        
+        
+        
+    ################################################### CREATION OF THE NETCDF   #######################################################
+
+    nc_file = os.getcwd()
+    nc_file = os.path.join(nc_file, 'projects/JUNO/data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')    #SERVIDOR  
+    
+    #nc_file = os.path.join(nc_file, '../data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')    #LOCAL MACHINE
+    
+    
+    
+    if os.path.exists(nc_file):
+        os.remove(nc_file)
+
+    ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
+
+    ds.title = 'MUR ' + day_txt + ' Fronts Arrays (Xarrays)'
+
+    #create dimensions of the NetCDF file
+    #time = ds.createDimension('time')
+    lat = ds.createDimension('lat', 1001)
+    lon = ds.createDimension('lon', 1401)
+
+    #times = ds.createVariable('time', 'f4', ('time', ))
+    lats = ds.createVariable('lat', 'f4', ('lat', ))
+    lons = ds.createVariable('lon', 'f4', ('lon', ))
+
+    sst_analyzed = ds.createVariable('sst', 'f4', ('lat', 'lon',))    #('lat', 'lon',)
+    sst_analyzed.units = 'C'   #degrees Celsius
+    sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) in ºC relative to the MUR data for that day'
+    #sst_analyzed[0, :, :] = sst
+    sst_analyzed[:, :] = sst_image
+
+
+    canny = ds.createVariable('Canny', 'f4', ('lat', 'lon',))
+    canny.units = 'Unknown'
+    canny.description = 'Array with identyfied fronts through Canny from OpenCV (1-> front), (Nan->not front)'
+    #canny[0, :, :] = canny_front.astype(float)
+    canny[:, :] = canny_front.astype(float)
+    
+    boa = ds.createVariable('BOA', 'f4', ('lat', 'lon',))
+    boa.units = 'Unknown'
+    boa.description = 'Array with identyfied fronts through the Belkin O Reilly Algorithm (temperature gradient). If the gradient is bigger than certain threshold is considered front (1) otherwise Nan'
+    #boa[0, :, :] = boa_front
+    boa[:, :] = boa_front
+    
+    cca = ds.createVariable('CCA', 'f4', ('lat', 'lon',))
+    cca.units = 'Unknown'
+    cca.description = 'Array with identyfied fronts through the Cayula Cornillon Algorithm (1->front) (Nan->not front)'
+    #cca[0, :, :] = cca_front.astype(float)
+    cca[:, :] = cca_front.astype(float)
+    
+    #times.units = 'days since 1-1-1'
+
+    lats[:] = np.linspace(35, 45, 1001)
+    lons[:] = np.linspace(-19, -5, 1401)
+
+
+# date_obj = datetime.datetime.strptime(day_txt, '%Y%m%d')
+    #date_time = date_obj.toordinal()
+    #times[:] = date_time
+
+    ds.close()
     
 
 if __name__ == "__main__":
