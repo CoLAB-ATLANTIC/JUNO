@@ -245,6 +245,11 @@ def main():
     exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_daily_data'))
     if not exist_path:
         os.makedirs(os.path.join(base_path, 'data/CMEMS_daily_data'))
+        
+     #check if the daily sst data file already exists in the CMEMS_daily_data folder. If it does delete it  
+    exist_sst_file = os.path.join(base_path, 'data/CMEMS_daily_data/CMEMS_' + day_txt + '.nc')
+    if os.path.exists(exist_sst_file):
+        os.remove(exist_sst_file)
 
 
     #Get the data in the format we want: data always at 12:30
