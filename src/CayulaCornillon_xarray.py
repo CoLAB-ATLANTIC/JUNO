@@ -21,8 +21,7 @@ np.set_printoptions(suppress=True)    #so the values in arrays don't came with t
 
 ##################################### Cayula-Cornillon Functions ############################################################3
 
-def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePopCohesion, 
-                     minGlobalPopCohesion, corners):
+def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePopCohesion, minGlobalPopCohesion, corners):
     
     """
     This functions detects fronts in slidding windows. If a front is detected, the function will return
