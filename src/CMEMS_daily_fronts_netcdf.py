@@ -35,7 +35,7 @@ import CayulaCornillon_xarray    #CayulaCornillon after making some profiling ch
 def get_data(data, base_path):
     
     """
-    Function to get our netCDF file that is stored in the data directory inside the MUR_seasonal_data folder and convert it to a dataframe.
+    Function to get our netCDF file that is stored in the data directory inside the MUR_seasonal_data folder and load it as an xarray.
     The data parameter is the string name of the netCDF file we want to import
     """
     
