@@ -18,6 +18,10 @@ import matplotlib
 import cv2
 import netCDF4 as nc
 import datetime
+import copernicusmarine
+import geopandas
+import rioxarray as rio
+from shapely.geometry import mapping
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
@@ -27,42 +31,42 @@ import CayulaCornillon_xarray    #CayulaCornillon after making some profiling ch
 
 ################################################## DOWNLOAD CMEMS_REANALYSIS DATA #####################################################
 
-# this class will be used to parse the motuclient options from a dictionary:
-class MotuOptions:
-    def __init__(self, attrs: dict):
-        super(MotuOptions, self).__setattr__("attrs", attrs)
+# # this class will be used to parse the motuclient options from a dictionary:
+# class MotuOptions:
+#     def __init__(self, attrs: dict):
+#         super(MotuOptions, self).__setattr__("attrs", attrs)
 
-    def __setattr__(self, k, v):
-        self.attrs[k] = v
+#     def __setattr__(self, k, v):
+#         self.attrs[k] = v
 
-    def __getattr__(self, k):
-        try:
-            return self.attrs[k]
-        except KeyError:
-            return None
+#     def __getattr__(self, k):
+#         try:
+#             return self.attrs[k]
+#         except KeyError:
+#             return None
         
-#This objective of this function is:   
-# post-process the script_template (displayed clicking on VIEW SCRIPT) to create a dictionary; returns this dictionary to feed the download of the data request
-def motu_option_parser(script_template, usr, pwd, output_filename, output_directory):
-    dictionary = dict([e.strip().partition(" ")[::2] for e in script_template.split('--')])
-    dictionary['variable'] = [value for (var, value) in [e.strip().partition(" ")[::2] for e in script_template.split('--')] if var == 'variable']  
-    for k, v in list(dictionary.items()):
-        if v == '<OUTPUT_DIRECTORY>':
-            dictionary[k] = output_directory
-        if v == '<OUTPUT_FILENAME>':
-            dictionary[k] = output_filename
-        if v == '<USERNAME>':
-            dictionary[k] = usr
-        if v == '<PASSWORD>':
-            dictionary[k] = pwd
-        if k in ['longitude-min', 'longitude-max', 'latitude-min', 'latitude-max']:
-            dictionary[k] = float(v)
-        if k in ['date-min', 'date-max']:
-            dictionary[k] = v[1:-1]
-        dictionary[k.replace('-','_')] = dictionary.pop(k)
-    dictionary.pop('python')
-    dictionary['auth_mode'] = 'cas'
-    return dictionary
+# #This objective of this function is:   
+# # post-process the script_template (displayed clicking on VIEW SCRIPT) to create a dictionary; returns this dictionary to feed the download of the data request
+# def motu_option_parser(script_template, usr, pwd, output_filename, output_directory):
+#     dictionary = dict([e.strip().partition(" ")[::2] for e in script_template.split('--')])
+#     dictionary['variable'] = [value for (var, value) in [e.strip().partition(" ")[::2] for e in script_template.split('--')] if var == 'variable']  
+#     for k, v in list(dictionary.items()):
+#         if v == '<OUTPUT_DIRECTORY>':
+#             dictionary[k] = output_directory
+#         if v == '<OUTPUT_FILENAME>':
+#             dictionary[k] = output_filename
+#         if v == '<USERNAME>':
+#             dictionary[k] = usr
+#         if v == '<PASSWORD>':
+#             dictionary[k] = pwd
+#         if k in ['longitude-min', 'longitude-max', 'latitude-min', 'latitude-max']:
+#             dictionary[k] = float(v)
+#         if k in ['date-min', 'date-max']:
+#             dictionary[k] = v[1:-1]
+#         dictionary[k.replace('-','_')] = dictionary.pop(k)
+#     dictionary.pop('python')
+#     dictionary['auth_mode'] = 'cas'
+#     return dictionary
 
 
 ####################################################################################################################
@@ -77,7 +81,7 @@ def get_data(data, base_path):
     """
     
     base_path = base_path
-    data_folder = os.path.join(base_path, "data/CMEMS_forecast_daily_data")  
+    data_folder = os.path.join(base_path, "../data/CMEMS_forecast_daily_data")  
     
     nc_path = os.path.join(data_folder, data)
     data_xarray = xr.load_dataset(nc_path)
@@ -85,12 +89,19 @@ def get_data(data, base_path):
     #para estarem todos com a mesma nomenclatura usada o CCA_SIED do script CayulaCornillon_xarray.py
     data_xarray = data_xarray.rename({'latitude':'lat', 'longitude':'lon', 'thetao':'analysed_sst'})
     
+    # Select the first level of the 'depth' dimension (assuming depth size is 1)
+    data_xarray = data_xarray.isel(depth=0)
+    
+    # Since we've selected the only 'depth' level, 'depth' becomes an unnecessary coordinate and can be dropped
+    data_xarray = data_xarray.drop_vars('depth')
+    
     return data_xarray
 
 
 #################################### CANNY ALGORITHM ##########################################################
 
-def canny_front_detection_1day(data_xarray, thresh_min=210, thresh_max=230, apertureSize=5, sigma=3):
+
+def canny_application(data_xarray, thresh_min=100, thresh_max=150, apertureSize=5, sigma=3):
     
     """
     This function receives a dataframe with CMEMS Forecast data for a individual day and returns the array 
@@ -129,6 +140,46 @@ def canny_front_detection_1day(data_xarray, thresh_min=210, thresh_max=230, aper
     
     
     return canny_front
+
+# def canny_front_detection_1day(data_xarray, thresh_min=210, thresh_max=230, apertureSize=5, sigma=3):
+    
+#     """
+#     This function receives a dataframe with CMEMS Forecast data for a individual day and returns the array 
+#     that result from the aplication of the Canny Algorithm from OpenCV. 
+#     For visualization purposes, one can change the minimum and maximum threshold.
+#     One can also apply a gaussian filter with a certain sigma value to reduce noise of the image.
+#     """
+    
+#     #Get the sst array in the right shape
+#     sst = np.array(data_xarray['analysed_sst'])
+#     sst = np.squeeze(sst)
+#     #Convert Temperature values to uint8 format with values in the range of 0-255
+#     sst_final = ((sst - np.nanmin(sst)) * (1/(np.nanmax(sst) - np.nanmin(sst)) * 255)).astype('uint8')
+#     sst_final = np.flipud(sst_final)   #flipud -> Reverse the order of elements along axis 0 (up/down).
+#     #in case we want to apply a gaussian filter with a certain sigma value (by default is 0)
+#     sst_final = gaussian_filter(sst_final, sigma=sigma)   
+
+#     #apply the canny algorithm and plot the image with the edges
+#     canny = cv2.Canny(sst_final, thresh_min, thresh_max, apertureSize=apertureSize, L2gradient=False)
+    
+#     canny[canny == 255] = 1
+    
+#     #convert 0s to Nans
+#     canny = canny.astype('float')
+#     canny[canny == 0] = 'nan'
+    
+#     #Apply a mask for the continental zone:
+#     mask = np.isnan(np.flipud(sst))    #Boolean array: True where array Temp had Null Values (correspond to the continental zone)
+#     mask255 =np.where(mask,(np.ones(mask.shape))*255,0).astype("uint8")   #array which values= 255 when mask=True
+#     #Dilation to ensure that the pixels that belong to the "shore/continental zone" are not considered fronts 
+#     kernel = np.ones((3,3), np.uint8)
+#     mask_dilated = cv2.dilate(mask255, kernel)
+#     canny_front = np.ma.masked_array(canny, mask_dilated)   #Mask an array where a condition is True
+    
+#     canny_front = np.flipud(canny_front)    
+    
+    
+#     return canny_front
 
 
 ########################################################################################################################
@@ -176,7 +227,8 @@ def BOA_aplication(data_xarray, threshold = 0.15):
     
     
 ################################## CAYULA-CORNILLON ALGORITHM #################################################################
-    
+
+
 def CCA_front(data_xarray): 
     
     """
@@ -187,7 +239,9 @@ def CCA_front(data_xarray):
     The df parameter is the dataframe with the SST data for a certain day
     """
     
-    front = np.zeros((361, 505))       #initialize a matrix of zeros. This shape is for the MUR data
+    #front = np.zeros((361, 505))       #initialize a matrix of zeros. This shape is for the MUR data
+    #initialize a matrix of zeros with the shape (coordinates) 0f the data (lat X lon)
+    front = np.zeros((len(data_xarray.lat), len(data_xarray.lon)))
     
     #2 empty arrays that will store the x and y values of the lines that are suposed to be drawn
     x = np.array([])
@@ -199,12 +253,14 @@ def CCA_front(data_xarray):
         
     cols_x = np.array([])
     for value in x:                     #convert values in array x to the respective index in a (1001, 1401) matrix
-        aux_x = (19+value)/0.027723                  #these numbers are relative to the MUR data
+        #aux_x = (19+value)/0.027723                  #these numbers are relative to the MUR data
+        aux_x = (abs(min(data_xarray.lon.values))+value)/(data_xarray.lon.values[1] - data_xarray.lon.values[0])
         cols_x = np.append(cols_x, aux_x)
     
     rows_y = np.array([])
     for value in y:                     #convert values in array y to the respective index in a (1001, 1401) matrix
-        aux_y = (45-value)/0.0277                  #these numbers are relative to the MUR data
+        #aux_y = (45-value)/0.0277                  #these numbers are relative to the MUR data
+        aux_y = (max(data_xarray.lat.values)-value)/(data_xarray.lon.values[1] - data_xarray.lon.values[0])
         rows_y = np.append(rows_y, aux_y)
      
     cols_x = np.round(cols_x)
@@ -258,57 +314,98 @@ def real_sst_image(data_xarray):
 def main():
     
     base_path = os.getcwd()
-    base_path = os.path.join(base_path, 'projects/JUNO')       #servidor
-    #base_path = os.path.join(base_path, 'JUNO')                #minha maquina
+    #base_path = os.path.join(base_path, 'projects/JUNO')       #servidor
+    #base_path = os.path.join(base_path, 'JUNO')
     
     #My Username and Password are stored in a .txt file stored in a data folder which belong to the gitignore
-    with open('projects/JUNO/data/copernicus_login.txt') as f:   #quando fizer clone para o servidor esta documento .txt vai ser ignorado
+    # with open('projects/JUNO/data/copernicus_login.txt') as f:    #Server
+    #     lines = f.readlines()
+        
+    with open('../data/copernicus_login.txt') as f:
         lines = f.readlines()
         
     USERNAME = lines[0][:-1]    #SERVIDOR
     PASSWORD = lines[1][:-1]
   
-    #USERNAME = lines[0][1:-1]    #MINHA MAQUINA
-    #PASSWORD = lines[1][:-1]
-  
-    exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_forecast_daily_data'))
+    # exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_forecast_daily_data'))
+    # if not exist_path:
+    #     os.makedirs(os.path.join(base_path, 'data/CMEMS_forecast_daily_data'))
+
+
+    # #Get the data in the format we want: data always at 12:30
+    # day_txt = (date.today() + timedelta(days=3)).strftime('%Y-%m-%d')
+    # date_motu_txt = day_txt + ' 12:30:00'
+
+    # OUTPUT_FILENAME = 'CMEMS_forecast_' + day_txt +'.nc'
+    # OUTPUT_DIRECTORY = 'projects/JUNO/data/CMEMS_forecast_daily_data'
+
+    # script_template = f'python -m motuclient \
+    #     --motu https://nrt.cmems-du.eu/motu-web/Motu \
+    #     --service-id IBI_ANALYSISFORECAST_PHY_005_001-TDS \
+    #     --product-id cmems_mod_ibi_phy_anfc_0.027deg-2D_PT1H-m \
+    #     --longitude-min -19 --longitude-max -5 \
+    #     --latitude-min 35 --latitude-max 45 \
+    #     --date-min "{date_motu_txt}" --date-max "{date_motu_txt}" \
+    #     --variable thetao \
+    #     --out-dir <OUTPUT_DIRECTORY> \
+    #     --out-name <OUTPUT_FILENAME> \
+    #     --user <USERNAME> --pwd <PASSWORD>'
+    
+    
+    # data_request_options_dict_automated = motu_option_parser(script_template, USERNAME, PASSWORD, OUTPUT_FILENAME, OUTPUT_DIRECTORY)
+    # #print(data_request_options_dict_automated)
+
+    # #Submit data request
+    # motuclient.motu_api.execute_request(MotuOptions(data_request_options_dict_automated))
+    
+    
+    
+    
+    exist_path = os.path.exists(os.path.join(base_path, '../data/CMEMS_forecast_daily_fronts_netcdf'))
     if not exist_path:
-        os.makedirs(os.path.join(base_path, 'data/CMEMS_forecast_daily_data'))
-
-
-    #Get the data in the format we want: data always at 12:30
-    day_txt = (date.today() + timedelta(days=3)).strftime('%Y-%m-%d')
-    date_motu_txt = day_txt + ' 12:30:00'
+        os.makedirs(os.path.join(base_path, '../data/CMEMS_forecast_daily_fronts_netcdf'))
+    
+    
+    #Get the data in the format we want
+    iday = 1
+    filename_day_txt = (date.today() + timedelta(days=iday)).strftime('%Y-%m-%d')
+    day_txt = (date.today() + timedelta(days=iday)).strftime('%Y-%m-%d')
+    #date_txt = day_txt + ' 00:00:00'
+    date_txt = day_txt + 'T00:00:00'
+    
+    #check if the daily sst data file already exists in the CMEMS_daily_data folder. If it does delete it  
+    exist_sst_file = os.path.join(base_path, '../data/CMEMS_forecast_daily_fronts_netcdf/CMEMS_forecast_' + filename_day_txt + '.nc')
+    if os.path.exists(exist_sst_file):
+        os.remove(exist_sst_file)
+        
 
     OUTPUT_FILENAME = 'CMEMS_forecast_' + day_txt +'.nc'
-    OUTPUT_DIRECTORY = 'projects/JUNO/data/CMEMS_forecast_daily_data'
-
-    script_template = f'python -m motuclient \
-        --motu https://nrt.cmems-du.eu/motu-web/Motu \
-        --service-id IBI_ANALYSISFORECAST_PHY_005_001-TDS \
-        --product-id cmems_mod_ibi_phy_anfc_0.027deg-2D_PT1H-m \
-        --longitude-min -19 --longitude-max -5 \
-        --latitude-min 35 --latitude-max 45 \
-        --date-min "{date_motu_txt}" --date-max "{date_motu_txt}" \
-        --variable thetao \
-        --out-dir <OUTPUT_DIRECTORY> \
-        --out-name <OUTPUT_FILENAME> \
-        --user <USERNAME> --pwd <PASSWORD>'
+    #OUTPUT_DIRECTORY = '/home/colabatlantic2/projects/JUNO/data/CMEMS_forecast_daily_fronts_netcdf'
+    OUTPUT_DIRECTORY = '/home/luisfigueiredo/JUNO/data/CMEMS_forecast_daily_data'
     
+    copernicusmarine.subset(
+        dataset_id="cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m",
+        # dataset_version="202211",
+        variables=["thetao"],
+        minimum_longitude=-100.04166666666666,
+        maximum_longitude=50.04166666666667,
+        minimum_latitude=-70.04166666666666,
+        maximum_latitude=80.04166666666667,
+        minimum_depth=0,
+        maximum_depth=0,
+        username=USERNAME,
+        password=PASSWORD,
+        start_datetime=date_txt,
+        end_datetime=date_txt,
+        output_filename = OUTPUT_FILENAME,
+        output_directory = OUTPUT_DIRECTORY,
+        force_download = True
+        )
     
-    data_request_options_dict_automated = motu_option_parser(script_template, USERNAME, PASSWORD, OUTPUT_FILENAME, OUTPUT_DIRECTORY)
-    #print(data_request_options_dict_automated)
-
-    #Submit data request
-    motuclient.motu_api.execute_request(MotuOptions(data_request_options_dict_automated))
-    
-    exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_forecast_daily_fronts_netcdf'))
-    if not exist_path:
-        os.makedirs(os.path.join(base_path, 'data/CMEMS_forecast_daily_fronts_netcdf'))
   
     xarray_cmems_forecast = get_data('CMEMS_forecast_' + day_txt + '.nc', base_path=base_path)
     
-    canny_front = canny_front_detection_1day(xarray_cmems_forecast)
+    canny_front = canny_application(xarray_cmems_forecast)
     
     boa_front = BOA_aplication(xarray_cmems_forecast, threshold=0.15)
     
@@ -319,17 +416,85 @@ def main():
     
     ################################################### CREATION OF THE NETCDF   #######################################################
     
+#     nc_file = os.getcwd()
+#     #nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_forecast_daily_fronts_netcdf/CMEMS_forecast_' + day_txt + '.nc')   #Server
+#     nc_file = os.path.join(nc_file, '../data/CMEMS_forecast_daily_fronts_netcdf/CMEMS_forecast_' + day_txt + '.nc')
+
+#     ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
+
+#     ds.title = 'CMEMS_Forecast ' + day_txt + ' Fronts Arrays (Xarrays)'
+
+#     #create dimensions of the NetCDF file
+#     #time = ds.createDimension('time')
+#     lat = ds.createDimension('lat', 361)
+#     lon = ds.createDimension('lon', 505)
+
+#     #times = ds.createVariable('time', 'f4', ('time', ))
+#     lats = ds.createVariable('lat', 'f4', ('lat', ))
+#     lons = ds.createVariable('lon', 'f4', ('lon', ))
+
+#     sst_analyzed = ds.createVariable('sst', 'f4', ('lat', 'lon',))     #('time', 'lat', 'lon',)
+#     sst_analyzed.units = 'C'   #degrees Celsius
+#     sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) in ºC relative to the CMEMS Forecast data for that day'
+#     #sst_analyzed[0, :, :] = sst
+#     sst_analyzed[:, :] = sst
+
+#     canny = ds.createVariable('Canny', 'f4', ('lat', 'lon',))
+#     canny.units = 'Unknown'
+#     canny.description = 'Array with identyfied fronts through Canny from OpenCV (1-> front), (Nan->not front)'
+#     #canny[0, :, :] = canny_front.astype(float)
+#     canny[:, :] = canny_front.astype(float)
+    
+#     boa = ds.createVariable('BOA', 'f4', ('lat', 'lon',))
+#     boa.units = 'Unknown'
+#     boa.description = 'Array with identyfied fronts through the Belkin O Reilly Algorithm (temperature gradient). If the gradient is bigger than certain threshold is considered front (1) otherwise Nan'
+#     #boa[0, :, :] = boa_front
+#     boa[:, :] = boa_front
+    
+#     cca = ds.createVariable('CCA', 'f4', ('lat', 'lon',))
+#     cca.units = 'Unknown'
+#     cca.description = 'Array with identyfied fronts through the Cayula Cornillon Algorithm (1->front) (Nan->not front)'
+#     #cca[0, :, :] = cca_front.astype(float)
+#     cca[:, :] = cca_front.astype(float)
+    
+#     #times.units = 'days since 1-1-1'
+
+#     lats[:] = np.linspace(35, 45, 361)
+#     lons[:] = np.linspace(-19, -5, 505)
+   
+   
+#     #date_obj = datetime.datetime.strptime(day_txt, '%Y-%m-%d')
+#     #date_time = date_obj.toordinal()
+#     #times[:] = date_time
+
+#     ds.close()
+    
+    
+
+# if __name__ == "__main__":
+#     main()
+    
+    
+    ################################################### CREATION OF THE NETCDF   #######################################################
+    
+    
     nc_file = os.getcwd()
-    nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_forecast_daily_fronts_netcdf/CMEMS_forecast_' + day_txt + '.nc')
+    #nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_forecast_daily_fronts_netcdf/CMEMS_forecast_' + day_txt + '.nc')   #Server
+    nc_file = os.path.join(nc_file, '../data/CMEMS_forecast_daily_fronts_netcdf/CMEMS_forecast_' + day_txt + '.nc')
 
     ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
 
     ds.title = 'CMEMS_Forecast ' + day_txt + ' Fronts Arrays (Xarrays)'
 
+
+    ds.title = 'CMEMS_ ' + day_txt + ' Fronts Arrays (Xarrays)'
+
     #create dimensions of the NetCDF file
     #time = ds.createDimension('time')
-    lat = ds.createDimension('lat', 361)
-    lon = ds.createDimension('lon', 505)
+    nr_lat = len(xarray_cmems_forecast.lat)
+    nr_lon = len(xarray_cmems_forecast.lon)
+    lat = ds.createDimension('lat', nr_lat)
+    lon = ds.createDimension('lon', nr_lon)
 
     #times = ds.createVariable('time', 'f4', ('time', ))
     lats = ds.createVariable('lat', 'f4', ('lat', ))
@@ -337,7 +502,7 @@ def main():
 
     sst_analyzed = ds.createVariable('sst', 'f4', ('lat', 'lon',))     #('time', 'lat', 'lon',)
     sst_analyzed.units = 'C'   #degrees Celsius
-    sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) in ºC relative to the CMEMS Forecast data for that day'
+    sst_analyzed.description = 'Array with the Sea-Surface Temperature (SST) in ºC relative to the CMEMS data for that day'
     #sst_analyzed[0, :, :] = sst
     sst_analyzed[:, :] = sst
 
@@ -361,17 +526,20 @@ def main():
     
     #times.units = 'days since 1-1-1'
 
-    lats[:] = np.linspace(35, 45, 361)
-    lons[:] = np.linspace(-19, -5, 505)
+    max_lon = max(xarray_cmems_forecast.lon.values)
+    min_lon = min(xarray_cmems_forecast.lon.values)
+    max_lat = max(xarray_cmems_forecast.lat.values)
+    min_lat = min(xarray_cmems_forecast.lat.values)
+    
+    lats[:] = np.linspace(min_lat, max_lat, nr_lat)
+    lons[:] = np.linspace(min_lon, max_lon, nr_lon)
    
    
     #date_obj = datetime.datetime.strptime(day_txt, '%Y-%m-%d')
     #date_time = date_obj.toordinal()
     #times[:] = date_time
 
-    ds.close()
-    
-    
+    ds.close()   
 
 if __name__ == "__main__":
     main()
