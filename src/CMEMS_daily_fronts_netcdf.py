@@ -18,6 +18,10 @@ import cv2
 import netCDF4 as nc
 import datetime
 import copernicusmarine
+import geopandas
+import rioxarray as rio
+from shapely.geometry import mapping
+
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
@@ -35,7 +39,7 @@ def get_data(data, base_path):
     The data parameter is the string name of the netCDF file we want to import
     """
     
-    base_path = base_path
+    #base_path = base_path
     data_folder = os.path.join(base_path, "data/CMEMS_daily_data")  
     
     nc_path = os.path.join(data_folder, data)
@@ -101,7 +105,7 @@ def canny_application(data_xarray, thresh_min=100, thresh_max=150, apertureSize=
 ################################### Belkin O'Reilly Algorithm ##########################################################
 
 
-def BOA_aplication(data_xarray, threshold = 0.7):  
+def BOA_aplication(data_xarray, threshold = 0.4):  
     
     """
     Function to, for a given dataframe with a longitude, latitude and SST columns, 
@@ -227,41 +231,43 @@ def real_sst_image(data_xarray):
 def main():
     
     base_path = os.getcwd()
-    base_path = os.path.join(base_path, 'projects/JUNO')       #servidor
-    #base_path = os.path.join(base_path, 'JUNO')                #minha maquina
+    base_path = '/home/colabatlantic2/projects/JUNO/'
+    #base_path = os.path.join(base_path, 'projects/JUNO')       #servidor
     #base_path = '/home/luisfigueiredo/edgeDetection/'
     
     #My Username and Password are stored in a .txt file stored in a data folder which belong to the gitignore
-    with open('projects/JUNO/data/copernicus_login.txt') as f:   #quando fizer clone para o servidor esta documento .txt vai ser ignorado
-    #with open('../data/copernicus_login.txt') as f:
+    with open('/home/colabatlantic2/projects/JUNO/data/copernicus_login.txt') as f:
+        #with open('../data/copernicus_login.txt') as f:
         lines = f.readlines()
         
     USERNAME = lines[0][:-1]    #SERVIDOR
     PASSWORD = lines[1][:-1]
-  
-    # USERNAME = lines[0][:-1]    #MINHA MAQUINA
-    # PASSWORD = lines[1][:-1]
     
     exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_daily_data'))
     if not exist_path:
         os.makedirs(os.path.join(base_path, 'data/CMEMS_daily_data'))
         
-     #check if the daily sst data file already exists in the CMEMS_daily_data folder. If it does delete it  
-    exist_sst_file = os.path.join(base_path, 'data/CMEMS_daily_data/CMEMS_' + day_txt + '.nc')
+
+    #Get the data in the format we want
+    iday = 7
+    filename_day_txt = (date.today() + timedelta(days=iday)).strftime('%Y-%m-%d')
+    day_txt = (date.today() + timedelta(days=iday)).strftime('%Y-%m-%d')
+    #date_txt = day_txt + ' 00:00:00'
+    date_txt = day_txt + 'T00:00:00'
+    
+    #check if the daily sst data file already exists in the CMEMS_daily_data folder. If it does delete it  
+    exist_sst_file = os.path.join(base_path, 'data/CMEMS_daily_data/CMEMS_' + filename_day_txt + '.nc')
     if os.path.exists(exist_sst_file):
         os.remove(exist_sst_file)
-
-
-    #Get the data in the format we want: data always at 12:30
-    day_txt = (date.today() - timedelta(days=1)).strftime('%Y-%m-%d')
-    date_txt = day_txt + ' 00:00:00'
+        
 
     OUTPUT_FILENAME = 'CMEMS_' + day_txt +'.nc'
-    OUTPUT_DIRECTORY = 'projects/JUNO/data/CMEMS_daily_data'
+    OUTPUT_DIRECTORY = '/home/colabatlantic2/projects/JUNO/data/CMEMS_daily_data'
     #OUTPUT_DIRECTORY = '/home/luisfigueiredo/edgeDetection/data/CMEMS_daily_data'
-        
+    
     copernicusmarine.subset(
         dataset_id="cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m",
+        # dataset_version="202211",
         variables=["thetao"],
         minimum_longitude=-100.04166666666666,
         maximum_longitude=50.04166666666667,
@@ -277,6 +283,7 @@ def main():
         output_directory = OUTPUT_DIRECTORY,
         force_download = True
         )
+    
     
     exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_daily_fronts_netcdf'))
     if not exist_path:
@@ -295,9 +302,10 @@ def main():
     
     ################################################### CREATION OF THE NETCDF   #######################################################
     
-    nc_file = os.getcwd()
+    #nc_file = os.getcwd()
+    nc_file = "/home/colabatlantic2/"
     #nc_file = '/home/luisfigueiredo/edgeDetection'
-    nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_daily_fronts_netcdf/' + day_txt + '00.nc')
+    nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_daily_fronts_netcdf/' + day_txt.replace("-","") + '00.nc')
     #nc_file = os.path.join(nc_file, 'data/CMEMS_daily_fronts_netcdf/CMEMS' + day_txt + '.nc')
 
     ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
@@ -356,6 +364,31 @@ def main():
 
     ds.close()
     
+    #nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_daily_fronts_netcdf/' + day_txt.replace("-","") + '00.nc')
+    
+    #shape_path = os.getcwd()
+    shape_path = '/home/colabatlantic2/'
+    
+    SHPFILE_PATH = os.path.join(shape_path, 'projects/JUNO/data/atlantic_shapefile/aoi_atlantic_clip.shp' )
+ 
+    sf = geopandas.read_file(SHPFILE_PATH)
+    #sf.set_crs('epsg:4326', inplace = True, allow_override = True)
+ 
+    netcdf_file = xr.open_dataset(nc_file, engine='netcdf4')
+    netcdf_file.rio.write_crs('epsg:4326', inplace = True)
+    netcdf_file = netcdf_file.rio.set_spatial_dims(x_dim='lon', y_dim='lat', inplace=True)
+    clipped_nc = netcdf_file.rio.clip(sf.geometry.apply(mapping), sf.crs, all_touched = True)
+    
+    
+    variable_names = ["BOA", "Canny", "CCA"]
+
+    for var_name in variable_names:
+        clipped_nc[var_name] = clipped_nc[var_name].where(clipped_nc[var_name] <= 1, np.nan)
+
+    
+    # Close the original dataset to free up the file
+    netcdf_file.close()
+    clipped_nc.to_netcdf(nc_file)
     
 
 if __name__ == "__main__":
