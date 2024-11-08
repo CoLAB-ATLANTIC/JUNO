@@ -180,6 +180,7 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
         except:
             M = []
             
+        #M = [x for x in M if x.size > 0]  # This ensures only non-empty arrays are included 
         M = [x for x in M if x]   #if the list has empty arrays we will drop them
         
         count = 0   #to iterate through the various arrays
@@ -201,8 +202,7 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
                 x = [(M[:][count][0][i][0]).round(4) for i in range(len(M[:][count][0]))]
                 
                 #For the first array of M we will take all the values of y and put them into an array                    
-                y = [(M[:][count][0][i][1]).round(4) for i in range(len(M[:][count][0]))]
-                
+                y = [(M[:][count][0][i][1]).round(4) for i in range(len(M[:][count][0]))]                
                 
                 #save the x and y data points for each line in an xdata and ydata array
                 xdata, ydata = np.append(xdata, x), np.append(ydata, y)

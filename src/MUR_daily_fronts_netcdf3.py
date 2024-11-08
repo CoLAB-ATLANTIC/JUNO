@@ -209,7 +209,7 @@ def main():
     
     
     #download MUR data for the day before yesterday
-    day_txt = (date.today() - timedelta(days=3)).strftime('%Y%m%d')
+    day_txt = (date.today() - timedelta(days=2)).strftime('%Y%m%d')
     
     
     date_obj = datetime.strptime(day_txt, "%Y%m%d")
@@ -265,7 +265,7 @@ def main():
     ################################################### CREATION OF THE NETCDF   #######################################################
 
     nc_file = os.getcwd()
-    nc_file = os.path.join(nc_file, 'projects/JUNO/data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')    #SERVIDOR  
+    nc_file = os.path.join(nc_file, 'projects/JUNO/data/MUR_daily_fronts_netcdf/' + day_txt + '00.nc')    #SERVIDOR  
     
     #nc_file = os.path.join(nc_file, '../data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')    #LOCAL MACHINE
     
