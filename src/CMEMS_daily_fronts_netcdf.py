@@ -21,7 +21,7 @@ import copernicusmarine
 import geopandas
 import rioxarray as rio
 from shapely.geometry import mapping
-
+import pandas as pd
 
 matplotlib.use('Agg')    #por causa do erro AttributeError: 'NoneType' object has no attribute 'set_cursor'
 
@@ -274,14 +274,13 @@ def main():
         minimum_latitude=-70.04166666666666,
         maximum_latitude=80.04166666666667,
         minimum_depth=0,
-        maximum_depth=0,
+        maximum_depth=1,
         username=USERNAME,
         password=PASSWORD,
         start_datetime=date_txt,
         end_datetime=date_txt,
         output_filename = OUTPUT_FILENAME,
-        output_directory = OUTPUT_DIRECTORY,
-        force_download = True
+        output_directory = OUTPUT_DIRECTORY
         )
     
     
@@ -386,6 +385,17 @@ def main():
         clipped_nc[var_name] = clipped_nc[var_name].where(clipped_nc[var_name] <= 1, np.nan)
 
     
+    # Compute time reference (days since 1970-01-01)
+    date_obj = datetime.datetime.strptime(day_txt, '%Y-%m-%d')
+    time_value = (date_obj - pd.Timestamp("1970-01-01")).days
+
+    # Add time dimension
+    clipped_nc = clipped_nc.expand_dims({"time": [time_value]})  # Create a new time dimension
+
+    # Set attributes for CF-compliance
+    clipped_nc["time"].attrs["units"] = "days since 1970-01-01"
+    clipped_nc["time"].attrs["calendar"] = "gregorian"
+
     # Close the original dataset to free up the file
     netcdf_file.close()
     clipped_nc.to_netcdf(nc_file)
