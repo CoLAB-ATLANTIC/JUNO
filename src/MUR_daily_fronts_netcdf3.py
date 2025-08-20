@@ -22,9 +22,9 @@ import cv2
 import matplotlib
 from scipy.ndimage import gaussian_filter
 from datetime import date, timedelta, datetime
-import wget
+#import wget
 from math import floor
-from pydap.client import open_url
+#from pydap.client import open_url
 import netCDF4 as nc
 import requests
 
