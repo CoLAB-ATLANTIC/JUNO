@@ -45,7 +45,7 @@ def getFrontInWindow(w, head, minTheta, minPopProp, minPopMeanDiff, minSinglePop
             return None,None,None,exitType  
         
     mi_ma = [np.nanmin(w), np.nanmax(w)]                          #array with minimum and maximum value of w
-    n = ceil((mi_ma[1]-mi_ma[0])/0.02)                            #number of bins
+    n = ceil((mi_ma[1]-mi_ma[0])/0.02)                            #number of bins of 0.02ºC width across the temperature range
     bins = np.arange(mi_ma[0], mi_ma[1], 0.02)                    #to define the bins sequence 
     [y, xout] = np.histogram(w[:], bins, mi_ma)                   #y->frequency counts, Xout->bin location
     xout = np.mean(np.vstack([xout[0:-1],xout[1:]]), axis=0)      #xout to be relative to the centers of the bins
