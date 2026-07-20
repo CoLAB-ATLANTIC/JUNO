@@ -275,14 +275,13 @@ def main():
         minimum_latitude=-70.04166666666666,
         maximum_latitude=80.04166666666667,
         minimum_depth=0,
-        maximum_depth=0,
+        maximum_depth=1,
         username=USERNAME,
         password=PASSWORD,
         start_datetime=date_txt,
         end_datetime=date_txt,
         output_filename = OUTPUT_FILENAME,
-        output_directory = OUTPUT_DIRECTORY,
-        force_download = True
+        output_directory = OUTPUT_DIRECTORY
         )
     
   
