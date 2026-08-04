@@ -264,6 +264,7 @@ def main():
     OUTPUT_FILENAME = 'CMEMS_' + day_txt +'.nc'
     OUTPUT_DIRECTORY = '/home/colabatlantic2/projects/JUNO/data/CMEMS_daily_data'
     #OUTPUT_DIRECTORY = '/home/luisfigueiredo/edgeDetection/data/CMEMS_daily_data'
+
     
     copernicusmarine.subset(
         dataset_id="cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m",
@@ -273,6 +274,8 @@ def main():
         maximum_longitude=50.04166666666667,
         minimum_latitude=-70.04166666666666,
         maximum_latitude=80.04166666666667,
+        # minimum_depth=0.494,
+        # maximum_depth=0.494,
         minimum_depth=0,
         maximum_depth=1,
         username=USERNAME,
@@ -288,7 +291,7 @@ def main():
     if not exist_path:
         os.makedirs(os.path.join(base_path, 'data/CMEMS_daily_fronts_netcdf'))
   
-    xarray_cmems = get_data('CMEMS_' + day_txt + '.nc', base_path=base_path)   
+    xarray_cmems = get_data('CMEMS_' + day_txt + '.nc', base_path=base_path)
     
     canny_front = canny_application(xarray_cmems)
     
