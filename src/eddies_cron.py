@@ -16,6 +16,9 @@ plt.rcParams["figure.figsize"] = 12, 10
 plt.rcParams["figure.autolayout"] = True
 import cv2
 import netCDF4 as nc
+import re
+
+import xml.etree.ElementTree as ET
 
 
 
@@ -23,27 +26,153 @@ import netCDF4 as nc
 ################################ Usar subprocess para usar o python como se estivesse na command line ###############################################
 ######################################### Download the eddies file exactly how i wanted it ##########################################################
 
-def download_eddie(filename, path, eddies_user, eddies_pass):
+# def download_eddie(filename, path, eddies_user, eddies_pass):
     
+#     """
+#     Function to download the data from the AVISO (eddies) (if its not already downloaded). Requires the filename (name of cyclonic or anticyclonic file)
+#     we want to give our data, the absolute path where it will be stored and a username and password from the AVISO to be able to download eddies data.
+#     Then we want to get a smaller file with only the variables we are interested in (time, track, lon, lat, effective_contour_lat, effective_contour_lon)
+#     """
+
+#     base_path = os.getcwd()
+#     exist_eddies_file = os.path.exists(path + filename)       
+#     if exist_eddies_file == False:       #if the file does not exist in that folder
+#         os.chdir(path)   #change directory to where we want to download and use subprocess to apply terminal commands directly in Python (to download the data)
+#         subprocess.run(['wget', '--user=' + eddies_user, '--password=' + eddies_pass, 'https://tds-odatis.aviso.altimetry.fr/thredds/fileServer/dataset-duacs-nrt-value-added-eddy-trajectory/' + filename])
+#         os.chdir(base_path)    #return back to original directory
+        
+#     exist_sliced_file = os.path.exists(path + filename[:-3] + '_slice.nc')
+#     if exist_sliced_file == False:   #if the smaller file with only the few variables we are interested in does not exist
+#         subprocess.run(['ncks', '-v', 'time,track,latitude,longitude,effective_contour_longitude,effective_contour_latitude', path + filename, path + filename[:-3] + '_slice.nc'])
+    
+#     # after all I think it would be better to delete the bigger file
+#     #os.remove(path + filename)
+
+def download_eddie(filename, path):
     """
-    Function to download the data from the AVISO (eddies) (if its not already downloaded). Requires the filename (name of cyclonic or anticyclonic file)
-    we want to give our data, the absolute path where it will be stored and a username and password from the AVISO to be able to download eddies data.
-    Then we want to get a smaller file with only the variables we are interested in (time, track, lon, lat, effective_contour_lat, effective_contour_lon)
+    Download an AVISO eddy NetCDF file and create a smaller NetCDF containing
+    only the required variables.
+
+    Credentials are read from the EDDIES_USER and EDDIES_PASS environment
+    variables.
     """
 
-    base_path = os.getcwd()
-    exist_eddies_file = os.path.exists(path + filename)       
-    if exist_eddies_file == False:       #if the file does not exist in that folder
-        os.chdir(path)   #change directory to where we want to download and use subprocess to apply terminal commands directly in Python (to download the data)
-        subprocess.run(['wget', '--user=' + eddies_user, '--password=' + eddies_pass, 'https://tds.aviso.altimetry.fr/thredds/fileServer/dataset-duacs-nrt-value-added-eddy-trajectory/' + filename])
-        os.chdir(base_path)    #return back to original directory
-        
-    exist_sliced_file = os.path.exists(path + filename[:-3] + '_slice.nc')
-    if exist_sliced_file == False:   #if the smaller file with only the few variables we are interested in does not exist
-        subprocess.run(['ncks', '-v', 'time,track,latitude,longitude,effective_contour_longitude,effective_contour_latitude', path + filename, path + filename[:-3] + '_slice.nc'])
-    
-    # after all I think it would be better to delete the bigger file
-    #os.remove(path + filename)
+    eddies_user = os.environ.get("EDDIES_USER")
+    eddies_pass = os.environ.get("EDDIES_PASS")
+
+    if not eddies_user or not eddies_pass:
+        raise RuntimeError(
+            "EDDIES_USER and EDDIES_PASS environment variables are not defined"
+        )
+
+    os.makedirs(path, exist_ok=True)
+
+    download_url = (
+        "https://tds-odatis.aviso.altimetry.fr/thredds/fileServer/"
+        "dataset-duacs-nrt-value-added-eddy-trajectory/"
+        f"{filename}"
+    )
+
+    output_file = os.path.join(path, filename)
+    temporary_file = output_file + ".part"
+
+    sliced_file = os.path.join(
+        path,
+        f"{os.path.splitext(filename)[0]}_slice.nc"
+    )
+
+    # Download the original file if it does not already exist
+    if not os.path.exists(output_file):
+        print(f"Downloading: {download_url}")
+        print(f"Destination: {output_file}")
+
+        try:
+            with requests.get(
+                download_url,
+                auth=(eddies_user, eddies_pass),
+                stream=True,
+                timeout=(30, 600),
+            ) as response:
+                response.raise_for_status()
+
+                with open(temporary_file, "wb") as file:
+                    for chunk in response.iter_content(
+                        chunk_size=1024 * 1024
+                    ):
+                        if chunk:
+                            file.write(chunk)
+
+            # Rename only after a successful download
+            os.replace(temporary_file, output_file)
+
+            print(f"Download completed: {output_file}")
+
+        except requests.RequestException as error:
+            if os.path.exists(temporary_file):
+                os.remove(temporary_file)
+
+            raise RuntimeError(
+                f"Failed to download {filename} from AVISO: {error}"
+            ) from error
+
+    else:
+        print(f"File already exists: {output_file}")
+
+    # Make sure the downloaded file exists and is not empty
+    if not os.path.isfile(output_file):
+        raise FileNotFoundError(
+            f"The downloaded file was not found: {output_file}"
+        )
+
+    if os.path.getsize(output_file) == 0:
+        raise RuntimeError(
+            f"The downloaded file is empty: {output_file}"
+        )
+
+    # Create the reduced NetCDF if it does not already exist
+    if not os.path.exists(sliced_file):
+        print(f"Creating reduced NetCDF: {sliced_file}")
+
+        variables = (
+            "time,track,latitude,longitude,"
+            "effective_contour_longitude,"
+            "effective_contour_latitude"
+        )
+
+        try:
+            subprocess.run(
+                [
+                    "ncks",
+                    "-O",
+                    "-v",
+                    variables,
+                    output_file,
+                    sliced_file,
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+        except FileNotFoundError as error:
+            raise RuntimeError(
+                "The 'ncks' command was not found. "
+                "Make sure NCO is installed and available to the cronjob."
+            ) from error
+
+        except subprocess.CalledProcessError as error:
+            if os.path.exists(sliced_file):
+                os.remove(sliced_file)
+
+            raise RuntimeError(
+                f"ncks failed while processing {output_file}:\n"
+                f"{error.stderr}"
+            ) from error
+
+        print(f"Reduced NetCDF created: {sliced_file}")
+
+    else:
+        print(f"Reduced NetCDF already exists: {sliced_file}")
     
     
     
@@ -264,19 +393,109 @@ def eddies_arrays(eddie_cyc_lons, eddie_cyc_lats, centro_cyc_x, centro_cyc_y, ed
 
 
 
-def request_eddy_filenames():
+# def request_eddy_filenames():
     
-    resposta = requests.get('https://tds.aviso.altimetry.fr/thredds/catalog/dataset-duacs-nrt-value-added-eddy-trajectory/catalog.html')
-    site = BeautifulSoup(resposta.content, 'html.parser')
-    a = site.find_all('a')
-    t = []
-    for link in a:
-        tt = link.find('tt')
-        t.append(tt)
+#     resposta = requests.get('https://tds-odatis.aviso.altimetry.fr/thredds/catalog/dataset-duacs-nrt-value-added-eddy-trajectory/catalog.html')
+#     site = BeautifulSoup(resposta.content, 'html.parser')
+#     a = site.find_all('a')
+#     t = []
+#     for link in a:
+#         tt = link.find('tt')
+#         t.append(tt)
         
-    cyclonic_name = t[1].text        #nome do ficheiro NETcdf para os dados ciclonicos
-    anticyclonic_name = t[2].text    #nome do ficheiro NETcdf para os dados anticiclonicos
+#     cyclonic_name = t[1].text        #nome do ficheiro NETcdf para os dados ciclonicos
+#     anticyclonic_name = t[2].text    #nome do ficheiro NETcdf para os dados anticiclonicos
     
+#     return cyclonic_name, anticyclonic_name
+
+
+AVISO_HOST = "https://tds-odatis.aviso.altimetry.fr"
+
+CATALOG_URL = (
+    f"{AVISO_HOST}/thredds/catalog/"
+    "dataset-duacs-nrt-value-added-eddy-trajectory/catalog.xml"
+)
+
+
+def request_eddy_filenames(eddies_user, eddies_pass):
+    """
+    Retrieve the current cyclonic and anticyclonic NetCDF filenames
+    from the AVISO THREDDS XML catalogue.
+    """
+
+    try:
+        response = requests.get(
+            CATALOG_URL,
+            auth=(eddies_user, eddies_pass),
+            timeout=60,
+        )
+        response.raise_for_status()
+
+    except requests.RequestException as error:
+        raise RuntimeError(
+            f"Could not retrieve the AVISO catalogue: {error}"
+        ) from error
+
+    try:
+        root = ET.fromstring(response.content)
+
+    except ET.ParseError as error:
+        content_preview = response.text[:500]
+
+        raise RuntimeError(
+            "AVISO did not return a valid THREDDS XML catalogue.\n"
+            f"Response URL: {response.url}\n"
+            f"Content-Type: {response.headers.get('Content-Type')}\n"
+            f"Response preview:\n{content_preview}"
+        ) from error
+
+    filenames = []
+
+    # THREDDS normally uses an XML namespace, so {*} matches any namespace.
+    for dataset in root.findall(".//{*}dataset"):
+        name = dataset.get("name", "").strip()
+
+        if name.lower().endswith(".nc"):
+            filenames.append(name)
+
+    # Remove duplicates while preserving order
+    filenames = list(dict.fromkeys(filenames))
+
+    if not filenames:
+        raise RuntimeError(
+            "The AVISO catalogue was retrieved, but it contained no "
+            "NetCDF filenames. The catalogue structure or dataset path "
+            "may have changed."
+        )
+
+    cyclonic_files = [
+        name
+        for name in filenames
+        if "cyclonic" in name.lower()
+        and "anticyclonic" not in name.lower()
+    ]
+
+    anticyclonic_files = [
+        name
+        for name in filenames
+        if "anticyclonic" in name.lower()
+    ]
+
+    if not cyclonic_files or not anticyclonic_files:
+        raise RuntimeError(
+            "Could not identify both AVISO eddy files.\n"
+            f"NetCDF filenames found in catalogue: {filenames}"
+        )
+
+    # If the catalogue contains multiple versions, select the last filename
+    # alphabetically. With filenames ending in YYYYMMDD, this selects the
+    # most recent file.
+    cyclonic_name = max(cyclonic_files)
+    anticyclonic_name = max(anticyclonic_files)
+
+    print(f"Cyclonic file found: {cyclonic_name}")
+    print(f"Anticyclonic file found: {anticyclonic_name}")
+
     return cyclonic_name, anticyclonic_name
 
 
@@ -347,21 +566,27 @@ def main():
     if os.listdir('/home/colabatlantic2/projects/JUNO/data/AVISO_data') == []:       #if the folder AVISO_data is empty
         
         #get the html content of the page to get the name of the files we wish to download
-        cyclonic_name, anticyclonic_name = request_eddy_filenames()
+        #cyclonic_name, anticyclonic_name = request_eddy_filenames()
+        eddies_user = os.environ.get("EDDIES_USER")
+        eddies_pass = os.environ.get("EDDIES_PASS")
+        if not eddies_user or not eddies_pass:
+            raise RuntimeError("EDDIES_USER or EDDIES_PASS is not defined")
+        cyclonic_name, anticyclonic_name = request_eddy_filenames(eddies_user, eddies_pass)
         
         #get the most recent date for which the AVISO eddies netcdf has data
         x = cyclonic_name.split('_')[-1]
         last_date_str = x.split('.')[0]
 
         #get eddies credentials (username and password) that are hidden as environment variables
-        #eddies_user = "luis.leao.figueiredo.23@gmail.com"
-        #eddies_pass = "17PLqM"
         eddies_user = os.environ.get('EDDIES_USER')
         eddies_pass = os.environ.get('EDDIES_PASS')
+
+        download_eddie(filename=cyclonic_name, path="/home/colabatlantic2/projects/JUNO/data/AVISO_data/")
+        download_eddie(filename=anticyclonic_name, path="/home/colabatlantic2/projects/JUNO/data/AVISO_data/")
         
         # download the 2 files which filenames were identified through the request made in the HTML content of the AVISO website
-        download_eddie(filename=cyclonic_name, path = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
-        download_eddie(filename=anticyclonic_name, path = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
+        # download_eddie(filename=cyclonic_name, path = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
+        # download_eddie(filename=anticyclonic_name, path = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
         
         #last slicing according to certain variable boundaries (coordinates and time)
         #this will result in 2 much smaller netcdfs (cyclonic and anticyclonic)
@@ -396,17 +621,35 @@ def main():
         
         
     else:    #if the folder AVISO_data is not empty
-        #we want to extract the most recent date for the files in the directory
-        list_dates = [] 
-        for filename in os.listdir('/home/colabatlantic2/projects/JUNO/data/AVISO_data'):
-            x  = filename.split('_')[-1]
-            data = x.split('.')[0]
-            list_dates.append(data)
-        recent_date_str = max(list_dates)      #most recent data for the files in the AVISO_data folder
+        # #we want to extract the most recent date for the files in the directory
+        # list_dates = [] 
+        # for filename in os.listdir('/home/colabatlantic2/projects/JUNO/data/AVISO_data'):
+        #     x  = filename.split('_')[-1]
+        #     data = x.split('.')[0]
+        #     list_dates.append(data)
+        # recent_date_str = max(list_dates)      #most recent data for the files in the AVISO_data folder
+
+        output_directory = ("/home/colabatlantic2/projects/JUNO/data/AVISO_netcdf")
+        completed_dates = []
+        if os.path.isdir(output_directory):
+            for filename in os.listdir(output_directory):
+                match = re.fullmatch(r"eddies_(\d{8})\.nc", filename)
+                if match:
+                    completed_dates.append(match.group(1))
+        if not completed_dates:
+            raise RuntimeError(f"No valid eddies_YYYYMMDD.nc files were found in " f"{output_directory}")
+        recent_date_str = max(completed_dates)
+
+        print(f"Most recent locally processed date: {recent_date_str}", flush=True)
         
     
         # get the html content of the page to get the name of the files we wish to download
-        cyclonic_name, anticyclonic_name = request_eddy_filenames()
+        #cyclonic_name, anticyclonic_name = request_eddy_filenames()
+        eddies_user = os.environ.get("EDDIES_USER")
+        eddies_pass = os.environ.get("EDDIES_PASS")
+        if not eddies_user or not eddies_pass:
+            raise RuntimeError("EDDIES_USER or EDDIES_PASS is not defined")
+        cyclonic_name, anticyclonic_name = request_eddy_filenames(eddies_user, eddies_pass)
     
         #get the most recent date for the AVISO eddies netcdf that we just requested
         x = cyclonic_name.split('_')[-1]
@@ -427,8 +670,11 @@ def main():
             eddies_pass = os.environ.get('EDDIES_PASS')
         
             #make the donwload of the 2 files (cyclonic and anticyclonic) that were identified through the request in the HTML of the AVISO website
-            download_eddie(filename=cyclonic_name, path = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
-            download_eddie(filename=anticyclonic_name, path = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
+            #download_eddie(filename=cyclonic_name, path = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
+            #download_eddie(filename=anticyclonic_name, path = '/home/colabatlantic2/projects/JUNO/data/AVISO_data/', eddies_user=eddies_user, eddies_pass = eddies_pass)
+
+            download_eddie(filename=cyclonic_name, path="/home/colabatlantic2/projects/JUNO/data/AVISO_data/")
+            download_eddie(filename=anticyclonic_name, path="/home/colabatlantic2/projects/JUNO/data/AVISO_data/")
         
             #we can remove the bigger netcdf files
             os.remove('/home/colabatlantic2/projects/JUNO/data/AVISO_data/'+ cyclonic_name)
