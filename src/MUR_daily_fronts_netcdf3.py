@@ -34,6 +34,14 @@ import BOA
 import CayulaCornillon_xarray
 
 
+def get_base_dir():
+    return os.environ.get("JUNO_BASE_DIR", "/app")
+
+
+def get_data_dir():
+    return os.environ.get("JUNO_DATA_DIR", os.path.join(get_base_dir(), "data"))
+
+
 
 
 ######################################### IMPORT DATA #######################################################
@@ -202,8 +210,7 @@ def real_sst_image(data_xarray):
 
 def main():
     
-    base_path = os.getcwd()
-    base_path = os.path.join(base_path, 'projects/JUNO')      #servidor
+    data_dir = get_data_dir()
     
     #base_path = os.path.join(base_path, '../')      #local machine
     
@@ -216,12 +223,12 @@ def main():
     day_txt_f = datetime.strftime(date_obj, "%Y-%m-%d")
     
         
-    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_data'))   #check if folder MUR_dailyu_data exists in data folder
+    exist_path = os.path.exists(os.path.join(data_dir, 'MUR_daily_data'))   #check if folder MUR_dailyu_data exists in data folder
     if not exist_path:                                                            #if it don't exist:
-        os.makedirs(os.path.join(base_path, 'data/MUR_daily_data'))               #create the folder
+        os.makedirs(os.path.join(data_dir, 'MUR_daily_data'))               #create the folder
 
     #check if the daily sst data file already exists in the MUR_daily_data folder. If it does delete it  
-    exist_sst_file = os.path.join(base_path, 'data/MUR_daily_data/sst_' + day_txt + '.nc')
+    exist_sst_file = os.path.join(data_dir, 'MUR_daily_data/sst_' + day_txt + '.nc')
     if os.path.exists(exist_sst_file):
         os.remove(exist_sst_file)
         
@@ -231,7 +238,7 @@ def main():
     
     url = "https://coastwatch.pfeg.noaa.gov/erddap/griddap/jplMURSST41.nc?analysed_sst[(" + day_txt_f + "T09:00:00Z):1:(" + day_txt_f + "T09:00:00Z)][(35):1:(45)][(-19):1:(-5)]"
     
-    output_file = os.path.join(base_path, "data/MUR_daily_data/sst_" + day_txt + '.nc')
+    output_file = os.path.join(data_dir, "MUR_daily_data/sst_" + day_txt + '.nc')
     
     response = requests.get(url)
     if response.status_code == 200:
@@ -256,16 +263,15 @@ def main():
     cca_front = CCA_front(xarray_mur)
         
 
-    exist_path = os.path.exists(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
+    exist_path = os.path.exists(os.path.join(data_dir, 'MUR_daily_fronts_netcdf'))    #check if folder MUR_algorithm_daily_images exists in data folder
     if not exist_path:                                                                         #if doesn't exist
-        os.makedirs(os.path.join(base_path, 'data/MUR_daily_fronts_netcdf'))                # create the folder
+        os.makedirs(os.path.join(data_dir, 'MUR_daily_fronts_netcdf'))                # create the folder
         
         
         
     ################################################### CREATION OF THE NETCDF   #######################################################
 
-    nc_file = os.getcwd()
-    nc_file = os.path.join(nc_file, 'projects/JUNO/data/MUR_daily_fronts_netcdf/' + day_txt + '00.nc')    #SERVIDOR  
+    nc_file = os.path.join(data_dir, 'MUR_daily_fronts_netcdf', day_txt + '00.nc')
     
     #nc_file = os.path.join(nc_file, '../data/MUR_daily_fronts_netcdf/MUR' + day_txt + '.nc')    #LOCAL MACHINE
     

@@ -1,0 +1,11 @@
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# JUNO create daily NetCDF with the 3 algorithms + SST image for MUR data
+15 9 * * * . /etc/cron.d/juno-env; python /app/src/MUR_daily_fronts_netcdf3.py > "${JUNO_LOG_DIR}/MUR_daily_fronts_netcdf3.log" 2>&1
+
+# JUNO create daily NetCDF with the 3 algorithms + SST image for CMEMS data
+15 9 * * * . /etc/cron.d/juno-env; python /app/src/CMEMS_daily_fronts_netcdf.py > "${JUNO_LOG_DIR}/CMEMS_daily_fronts_netcdf.log" 2>&1
+
+# JUNO eddies tracking and identification
+45 12 * * * . /etc/cron.d/juno-env; python /app/src/eddies_cron_complete.py > "${JUNO_LOG_DIR}/eddies_cron_complete.log" 2>&1

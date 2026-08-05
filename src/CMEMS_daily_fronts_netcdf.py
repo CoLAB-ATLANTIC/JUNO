@@ -29,18 +29,41 @@ import BOA
 import CayulaCornillon_xarray    #CayulaCornillon after making some profiling changes to improve efficiency
 
 
+def get_base_dir():
+    return os.environ.get("JUNO_BASE_DIR", "/app")
+
+
+def get_data_dir():
+    return os.environ.get("JUNO_DATA_DIR", os.path.join(get_base_dir(), "data"))
+
+
+def get_copernicus_credentials(data_dir):
+    username = os.environ.get("COPERNICUS_USERNAME")
+    password = os.environ.get("COPERNICUS_PASSWORD")
+    if username and password:
+        return username, password
+
+    login_file = os.environ.get(
+        "JUNO_COPERNICUS_LOGIN_FILE",
+        os.path.join(data_dir, "copernicus_login.txt"),
+    )
+    with open(login_file) as f:
+        lines = f.readlines()
+
+    return lines[0].strip(), lines[1].strip()
+
+
 
 ######################################### IMPORT DATA ################################################################
 
-def get_data(data, base_path):
+def get_data(data, data_dir):
     
     """
     Function to get our netCDF file that is stored in the data directory inside the MUR_seasonal_data folder and load it as an xarray.
     The data parameter is the string name of the netCDF file we want to import
     """
     
-    #base_path = base_path
-    data_folder = os.path.join(base_path, "data/CMEMS_daily_data")  
+    data_folder = os.path.join(data_dir, "CMEMS_daily_data")
     
     nc_path = os.path.join(data_folder, data)
     data_xarray = xr.load_dataset(nc_path)
@@ -230,22 +253,16 @@ def real_sst_image(data_xarray):
 
 def main():
     
-    base_path = os.getcwd()
-    base_path = '/home/colabatlantic2/projects/JUNO/'
+    base_path = get_base_dir()
+    data_dir = get_data_dir()
     #base_path = os.path.join(base_path, 'projects/JUNO')       #servidor
     #base_path = '/home/luisfigueiredo/edgeDetection/'
     
-    #My Username and Password are stored in a .txt file stored in a data folder which belong to the gitignore
-    with open('/home/colabatlantic2/projects/JUNO/data/copernicus_login.txt') as f:
-        #with open('../data/copernicus_login.txt') as f:
-        lines = f.readlines()
-        
-    USERNAME = lines[0][:-1]    #SERVIDOR
-    PASSWORD = lines[1][:-1]
+    USERNAME, PASSWORD = get_copernicus_credentials(data_dir)
     
-    exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_daily_data'))
+    exist_path = os.path.exists(os.path.join(data_dir, 'CMEMS_daily_data'))
     if not exist_path:
-        os.makedirs(os.path.join(base_path, 'data/CMEMS_daily_data'))
+        os.makedirs(os.path.join(data_dir, 'CMEMS_daily_data'))
         
 
     #Get the data in the format we want
@@ -256,13 +273,13 @@ def main():
     date_txt = day_txt + 'T00:00:00'
     
     #check if the daily sst data file already exists in the CMEMS_daily_data folder. If it does delete it  
-    exist_sst_file = os.path.join(base_path, 'data/CMEMS_daily_data/CMEMS_' + filename_day_txt + '.nc')
+    exist_sst_file = os.path.join(data_dir, 'CMEMS_daily_data/CMEMS_' + filename_day_txt + '.nc')
     if os.path.exists(exist_sst_file):
         os.remove(exist_sst_file)
         
 
     OUTPUT_FILENAME = 'CMEMS_' + day_txt +'.nc'
-    OUTPUT_DIRECTORY = '/home/colabatlantic2/projects/JUNO/data/CMEMS_daily_data'
+    OUTPUT_DIRECTORY = os.path.join(data_dir, 'CMEMS_daily_data')
     #OUTPUT_DIRECTORY = '/home/luisfigueiredo/edgeDetection/data/CMEMS_daily_data'
 
     
@@ -287,11 +304,11 @@ def main():
         )
     
     
-    exist_path = os.path.exists(os.path.join(base_path, 'data/CMEMS_daily_fronts_netcdf'))
+    exist_path = os.path.exists(os.path.join(data_dir, 'CMEMS_daily_fronts_netcdf'))
     if not exist_path:
-        os.makedirs(os.path.join(base_path, 'data/CMEMS_daily_fronts_netcdf'))
+        os.makedirs(os.path.join(data_dir, 'CMEMS_daily_fronts_netcdf'))
   
-    xarray_cmems = get_data('CMEMS_' + day_txt + '.nc', base_path=base_path)
+    xarray_cmems = get_data('CMEMS_' + day_txt + '.nc', data_dir=data_dir)
     
     canny_front = canny_application(xarray_cmems)
     
@@ -305,9 +322,8 @@ def main():
     ################################################### CREATION OF THE NETCDF   #######################################################
     
     #nc_file = os.getcwd()
-    nc_file = "/home/colabatlantic2/"
     #nc_file = '/home/luisfigueiredo/edgeDetection'
-    nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_daily_fronts_netcdf/' + day_txt.replace("-","") + '00.nc')
+    nc_file = os.path.join(data_dir, 'CMEMS_daily_fronts_netcdf', day_txt.replace("-","") + '00.nc')
     #nc_file = os.path.join(nc_file, 'data/CMEMS_daily_fronts_netcdf/CMEMS' + day_txt + '.nc')
 
     ds = nc.Dataset(nc_file, 'w', format='NETCDF4')
@@ -369,9 +385,10 @@ def main():
     #nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_daily_fronts_netcdf/' + day_txt.replace("-","") + '00.nc')
     
     #shape_path = os.getcwd()
-    shape_path = '/home/colabatlantic2/'
-    
-    SHPFILE_PATH = os.path.join(shape_path, 'projects/JUNO/data/atlantic_shapefile/aoi_atlantic_clip.shp' )
+    SHPFILE_PATH = os.environ.get(
+        "JUNO_ATLANTIC_SHAPEFILE",
+        os.path.join(data_dir, 'atlantic_shapefile/aoi_atlantic_clip.shp'),
+    )
  
     sf = geopandas.read_file(SHPFILE_PATH)
     #sf.set_crs('epsg:4326', inplace = True, allow_override = True)
@@ -406,4 +423,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

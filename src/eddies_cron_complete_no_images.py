@@ -12,7 +12,7 @@ The main processing steps are:
 4. Download and reduce the AVISO datasets to the required variables.
 5. Extract eddies within the configured geographic and temporal boundaries.
 6. Identify the contours and centres of cyclonic and anticyclonic eddies.
-7. Generate daily images and NetCDF files containing the eddy shapes and centroids.
+7. Render the eddy shapes and centroids in memory and generate daily NetCDF files.
 8. Remove intermediate files after successful processing to reduce storage usage.
 
 The processing is resumable so after an interruption the script processes only the dates that are still missing.
@@ -27,7 +27,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
 from shapely.geometry import Polygon
-import matplotlib.pyplot as plt
 import datetime
 from datetime import timedelta
 from bs4 import BeautifulSoup
@@ -38,25 +37,7 @@ import re
 import xml.etree.ElementTree as ET
 plt.rcParams["figure.figsize"] = 12, 10
 plt.rcParams["figure.autolayout"] = True
-import cv2
 import netCDF4 as nc
-
-
-def get_base_dir():
-    return os.environ.get("JUNO_BASE_DIR", "/app")
-
-
-def get_data_dir():
-    return os.environ.get("JUNO_DATA_DIR", os.path.join(get_base_dir(), "data"))
-
-
-def get_aviso_dirs():
-    data_dir = get_data_dir()
-    return {
-        "data": os.path.join(data_dir, "AVISO_data"),
-        "images": os.path.join(data_dir, "AVISO_images"),
-        "netcdf": os.path.join(data_dir, "AVISO_netcdf"),
-    }
 
 
 
@@ -315,92 +296,87 @@ def eddie_tracking(filepath, filename):
 
 
 
-def eddies_arrays(eddie_cyc_lons, eddie_cyc_lats, centro_cyc_x, centro_cyc_y, eddie_anti_lons, eddie_anti_lats, centro_anti_x, centro_anti_y, file_last_date_str):
-    
+def _figure_to_binary_array(fig):
+    """Convert a rendered Matplotlib figure to the existing 1/NaN mask."""
+    fig.canvas.draw()
+    rgba = np.asarray(fig.canvas.buffer_rgba())
+
+    # Any non-white rendered pixel represents an eddy line or centroid.
+    rendered_feature = np.any(rgba[:, :, :3] < 255, axis=2)
+    result = np.full(rendered_feature.shape, np.nan, dtype=np.float32)
+    result[rendered_feature] = 1.0
+
+    # Preserve the orientation used by the former PNG/OpenCV workflow.
+    return np.flipud(result)
+
+
+def _new_eddy_figure():
+    """Create a figure with the same size and geographic limits as before."""
+    fig, axis = plt.subplots(figsize=(12, 10))
+    axis.set_xlim(-20, -4)
+    axis.set_ylim(33, 46)
+    axis.axis("off")
+    return fig, axis
+
+
+def eddies_arrays(
+    eddie_cyc_lons,
+    eddie_cyc_lats,
+    centro_cyc_x,
+    centro_cyc_y,
+    eddie_anti_lons,
+    eddie_anti_lats,
+    centro_anti_x,
+    centro_anti_y,
+):
     """
-    Function to save 4 images as .png files: the shapes of the eddies (cyclonic and anticyclonic) and the respective centroids.
-    Then it loads the 4 images and converts them to a numpy array 
+    Render cyclonic and anticyclonic shapes and centroids directly in memory.
+
+    This preserves the four arrays used by create_netcdf without creating PNG
+    files in the AVISO_images directory.
     """
-    
-
-    image_directory = get_aviso_dirs()["images"]
-    os.makedirs(image_directory, exist_ok=True)
-
-    #plot the shapes of the cyclonic eddies
-    fig = plt.figure(figsize=(12,10))
-    for i in range(len(eddie_cyc_lons)):
-        plt.plot(eddie_cyc_lons[i], eddie_cyc_lats[i], color='green')
-    plt.xlim([-20, -4]);
-    plt.ylim([33, 46]);
-    plt.axis('off');
-    shape_cyc_path = os.path.join(image_directory, 'shape_cyc_' + file_last_date_str + '.png')
-    plt.savefig(shape_cyc_path)
+    fig, axis = _new_eddy_figure()
+    for longitudes, latitudes in zip(eddie_cyc_lons, eddie_cyc_lats):
+        axis.plot(longitudes, latitudes, color="green")
+    array_cyc_shape = _figure_to_binary_array(fig)
     plt.close(fig)
-    
-    #array with cyclonic shape data
-    im_cyc = cv2.imread(shape_cyc_path)
-    array_cyc_shape = cv2.cvtColor(im_cyc, cv2.COLOR_BGR2GRAY).astype('float32')    # BGR -> GRAYSCALE
-    array_cyc_shape[array_cyc_shape<255] = 0
-    array_cyc_shape[array_cyc_shape==255] = np.nan
-    array_cyc_shape[array_cyc_shape==0] = 1
-    array_cyc_shape = np.flipud(array_cyc_shape)
 
+    fig, axis = _new_eddy_figure()
+    for longitude, latitude in zip(centro_cyc_x, centro_cyc_y):
+        axis.scatter(
+            longitude,
+            latitude,
+            marker=".",
+            color="m",
+            linewidths=0.1,
+        )
+    array_cyc_centroids = _figure_to_binary_array(fig)
+    plt.close(fig)
 
-    #all the centroid of the cyclonic eddies identified in a particular period
-    fig = plt.figure(figsize=(12,10))
-    for j in range(len(centro_cyc_x)):
-        plt.scatter(centro_cyc_x[j], centro_cyc_y[j], marker='.', color='m', linewidths=0.1)
-    plt.xlim([-20, -4]);
-    plt.ylim([33, 46]);
-    plt.axis('off');
-    centers_cyc_path = os.path.join(image_directory, 'centers_cyc_' + file_last_date_str + '.png')
-    plt.savefig(centers_cyc_path)
+    fig, axis = _new_eddy_figure()
+    for longitudes, latitudes in zip(eddie_anti_lons, eddie_anti_lats):
+        axis.plot(longitudes, latitudes, color="red")
+    array_anti_shape = _figure_to_binary_array(fig)
     plt.close(fig)
-    #array with cyclonic centroids data
-    im_cyc_centroids = cv2.imread(centers_cyc_path)
-    array_cyc_centroids = cv2.cvtColor(im_cyc_centroids, cv2.COLOR_BGR2GRAY).astype('float32')   # BGR -> GRAYSCALE
-    array_cyc_centroids[array_cyc_centroids<255] = 0
-    array_cyc_centroids[array_cyc_centroids==255] = np.nan
-    array_cyc_centroids[array_cyc_centroids==0] = 1
-    array_cyc_centroids = np.flipud(array_cyc_centroids)
-        
-    #save image of the shapes of the anticyclonic eddies
-    fig = plt.figure(figsize=(12,10))
-    for i in range(len(eddie_anti_lons)):
-        plt.plot(eddie_anti_lons[i], eddie_anti_lats[i], color='red')
-    plt.xlim([-20, -4]);
-    plt.ylim([33, 46]);
-    plt.axis('off');
-    shape_anti_path = os.path.join(image_directory, 'shape_anti_' + file_last_date_str + '.png')
-    plt.savefig(shape_anti_path)
-    plt.close(fig)
-    #array with anticyclonic shape data
-    im_anti = cv2.imread(shape_anti_path)
-    array_anti_shape = cv2.cvtColor(im_anti, cv2.COLOR_BGR2GRAY).astype('float32')    # BGR -> GRAYSCALE
-    array_anti_shape[array_anti_shape<255] = 0
-    array_anti_shape[array_anti_shape==255] = np.nan
-    array_anti_shape[array_anti_shape==0] = 1
-    array_anti_shape = np.flipud(array_anti_shape)
 
-    #all the centroid of the cyclonic eddies identified in a particular period
-    fig = plt.figure(figsize=(12,10))
-    for j in range(len(centro_anti_x)):
-        plt.scatter(centro_anti_x[j], centro_anti_y[j], marker='.', color='m', linewidths=0.1)
-    plt.xlim([-20, -4]);
-    plt.ylim([33, 46]);
-    plt.axis('off');
-    centers_anti_path = os.path.join(image_directory, 'centers_anti_' + file_last_date_str + '.png')
-    plt.savefig(centers_anti_path)
+    fig, axis = _new_eddy_figure()
+    for longitude, latitude in zip(centro_anti_x, centro_anti_y):
+        axis.scatter(
+            longitude,
+            latitude,
+            marker=".",
+            color="m",
+            linewidths=0.1,
+        )
+    array_anti_centroids = _figure_to_binary_array(fig)
     plt.close(fig)
-    #array with anticyclonic centroids data
-    im_anti_centroids = cv2.imread(centers_anti_path)
-    array_anti_centroids = cv2.cvtColor(im_anti_centroids, cv2.COLOR_BGR2GRAY).astype('float32') # BGR -> GRAYSCALE
-    array_anti_centroids[array_anti_centroids<255] = 0
-    array_anti_centroids[array_anti_centroids==255] = np.nan
-    array_anti_centroids[array_anti_centroids==0] = 1
-    array_anti_centroids = np.flipud(array_anti_centroids)
-    
-    return array_cyc_shape, array_cyc_centroids, array_anti_shape, array_anti_centroids
+
+    return (
+        array_cyc_shape,
+        array_cyc_centroids,
+        array_anti_shape,
+        array_anti_centroids,
+    )
 
 
 
@@ -459,9 +435,7 @@ def request_eddy_filenames(eddies_user, eddies_pass):
 
 def create_netcdf(data_final_str, array_cyc_shape, array_cyc_centroids, array_anti_shape, array_anti_centroids):
     
-    output_directory = get_aviso_dirs()["netcdf"]
-    os.makedirs(output_directory, exist_ok=True)
-    nc_file = os.path.join(output_directory, 'eddies_' + data_final_str + '.nc')
+    nc_file = '/home/colabatlantic2/projects/JUNO/data/AVISO_netcdf/eddies_' + data_final_str + '.nc'
 
     if os.path.exists(nc_file):
         os.remove(nc_file)
@@ -516,13 +490,10 @@ def create_netcdf(data_final_str, array_cyc_shape, array_cyc_centroids, array_an
 
 
 def main():
-    aviso_dirs = get_aviso_dirs()
-    data_directory = aviso_dirs["data"]
-    image_directory = aviso_dirs["images"]
-    output_directory = aviso_dirs["netcdf"]
+    data_directory = "/home/colabatlantic2/projects/JUNO/data/AVISO_data"
+    output_directory = "/home/colabatlantic2/projects/JUNO/data/AVISO_netcdf"
 
     os.makedirs(data_directory, exist_ok=True)
-    os.makedirs(image_directory, exist_ok=True)
     os.makedirs(output_directory, exist_ok=True)
 
     eddies_user = os.environ.get("EDDIES_USER")
@@ -620,7 +591,6 @@ def main():
                 eddie_anti_lats,
                 centro_anti_x,
                 centro_anti_y,
-                file_last_date_str=data_final_str,
             )
             create_netcdf(data_final_str, *arrays)
 

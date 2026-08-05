@@ -1,0 +1,16 @@
+services:
+  juno:
+    build:
+      context: .
+    image: juno:dockerize
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      JUNO_BASE_DIR: /app
+      JUNO_DATA_DIR: /data
+      JUNO_LOG_DIR: /logs
+    volumes:
+      - ./data:/data
+      - ./logs:/logs
+    command: cron
