@@ -1,5 +1,7 @@
 notebooks/.ipynb_checkpoints/*
 data/*
+juno_data/
+juno_logs/
 notebooks/jfm.csv
 notebooks/amj.csv
 notebooks/jas.csv
@@ -10,3 +12,4 @@ notebooks/mask.tif
 notebooks/grdir.tif
 notebooks/grad_dir.tif
 src/*.log
+.env

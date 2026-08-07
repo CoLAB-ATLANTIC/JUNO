@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-# Set useful defaults: code lives in /app, generated data in /data, logs in /logs
+# Set useful defaults such as: code lives in /app, generated data in /data, logs in /logs
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     MPLBACKEND=Agg \
@@ -33,9 +33,7 @@ COPY docker/ /app/docker/
 COPY README.md LICENSE.txt /app/
 
 #make the entrypoint.sh file executable and create the /data and /logs directories
-RUN chmod +x /app/docker/entrypoint.sh \
-    && mkdir -p /data /logs
-
+RUN chmod +x /app/docker/entrypoint.sh && mkdir -p /data /logs
 
 #make the /data and /logs directories available as volumes for persistent storage
 VOLUME ["/data", "/logs"]

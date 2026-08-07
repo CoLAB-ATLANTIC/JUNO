@@ -11,6 +11,6 @@ services:
       JUNO_DATA_DIR: /data
       JUNO_LOG_DIR: /logs
     volumes:
-      - ./data:/data
-      - ./logs:/logs
+      - ./juno_data:/data
+      - ./juno_logs:/logs
     command: cron

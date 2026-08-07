@@ -12,8 +12,8 @@ The image contains only the code, Python dependencies, and required system tools
 
 By default, `docker-compose.yml` maps:
 
-- `./data:/data`
-- `./logs:/logs`
+- `./juno_data:/data`
+- `./juno_logs:/logs`
 
 ## Environment Variables
 
@@ -40,7 +40,7 @@ Optional path settings:
 
 ```bash
 cp .env.example .env
-mkdir -p data logs
+mkdir -p juno_data juno_logs
 docker compose build
 docker compose up -d
 ```
