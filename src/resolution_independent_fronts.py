@@ -37,6 +37,9 @@ class FrontConfig:
 
 LAT_NAMES = ("lat", "latitude", "nav_lat", "y")
 LON_NAMES = ("lon", "longitude", "nav_lon", "x")
+TIME_NAMES = ("time",)
+DEPTH_NAMES = ("depth", "deptht", "depthu", "depthv", "depthw", "z", "lev", "level")
+SST_VARIABLE_NAMES = ("analysed_sst", "thetao", "temperature", "temp", "sst")
 
 
 def _first_existing_name(ds: xr.Dataset, names: tuple[str, ...]) -> str | None:
@@ -58,6 +61,64 @@ def _finite_median(da: xr.DataArray) -> float:
     return float(np.median(finite))
 
 
+def _normalised_name(name: str) -> str:
+    return name.strip().lower().replace("-", "_")
+
+
+def _is_depth_dim(dim: str) -> bool:
+    name = _normalised_name(dim)
+    return name in DEPTH_NAMES or "depth" in name
+
+
+def _is_time_dim(dim: str) -> bool:
+    return _normalised_name(dim) in TIME_NAMES
+
+
+def _select_surface_index(da: xr.DataArray, dim: str) -> int:
+    if dim not in da.coords:
+        return 0
+
+    values = np.asarray(da.coords[dim].values, dtype="float64").reshape(-1)
+    if values.size == 0 or not np.any(np.isfinite(values)):
+        return 0
+
+    finite_indexes = np.where(np.isfinite(values))[0]
+    finite_values = values[finite_indexes]
+    return int(finite_indexes[np.argmin(np.abs(finite_values))])
+
+
+def infer_sst_variable(ds: xr.Dataset) -> str:
+    """Return a likely SST variable name when one is not supplied."""
+    for name in SST_VARIABLE_NAMES:
+        if name in ds.data_vars:
+            return name
+
+    lower_lookup = {_normalised_name(name): name for name in ds.data_vars}
+    for name in SST_VARIABLE_NAMES:
+        normalised = _normalised_name(name)
+        if normalised in lower_lookup:
+            return lower_lookup[normalised]
+
+    raise ValueError(
+        "Could not infer an SST variable. Use --variable with one of the "
+        f"available variables: {', '.join(ds.data_vars)}"
+    )
+
+
+def resolve_sst_variable(ds: xr.Dataset, variable: str | None) -> str:
+    if variable is None:
+        return infer_sst_variable(ds)
+    if variable in ds.data_vars:
+        return variable
+
+    normalised = _normalised_name(variable)
+    for name in ds.data_vars:
+        if _normalised_name(name) == normalised:
+            return name
+
+    raise ValueError(f"Variable {variable!r} was not found in the input dataset")
+
+
 def _validate_config(cfg: FrontConfig) -> None:
     if cfg.smoothing_km < 0:
         raise ValueError("smoothing_km must be greater than or equal to 0")
@@ -73,10 +134,9 @@ def _validate_config(cfg: FrontConfig) -> None:
         raise ValueError("canny_low must be smaller than canny_high")
 
 
-def normalise_sst_dataset(ds: xr.Dataset, variable: str) -> xr.Dataset:
+def normalise_sst_dataset(ds: xr.Dataset, variable: str | None = None) -> xr.Dataset:
     """Return one time/depth slice named analysed_sst on ascending lat/lon."""
-    if variable not in ds:
-        raise ValueError(f"Variable {variable!r} was not found in the input dataset")
+    variable = resolve_sst_variable(ds, variable)
 
     rename = {}
     lat_name = _first_existing_name(ds, LAT_NAMES)
@@ -94,7 +154,12 @@ def normalise_sst_dataset(ds: xr.Dataset, variable: str) -> xr.Dataset:
     da = ds[variable]
     for dim in list(da.dims):
         if dim not in ("lat", "lon"):
-            da = da.isel({dim: 0}, drop=True)
+            if _is_depth_dim(dim):
+                da = da.isel({dim: _select_surface_index(da, dim)}, drop=True)
+            elif _is_time_dim(dim):
+                da = da.isel({dim: 0}, drop=True)
+            else:
+                da = da.isel({dim: 0}, drop=True)
     if "lat" not in da.dims or "lon" not in da.dims:
         raise ValueError(f"Variable {variable!r} must have latitude and longitude dimensions")
     da = da.transpose("lat", "lon").astype("float64")
@@ -220,7 +285,7 @@ def cca_fronts(ds: xr.Dataset, dy: float, dx: float, cfg: FrontConfig) -> np.nda
     return _binary(restored, _coast_mask(sst, dy, dx, cfg.coast_buffer_km))
 
 
-def detect_fronts(ds: xr.Dataset, variable: str, cfg: FrontConfig = FrontConfig()) -> xr.Dataset:
+def detect_fronts(ds: xr.Dataset, variable: str | None = None, cfg: FrontConfig = FrontConfig()) -> xr.Dataset:
     _validate_config(cfg)
     time_value = None
     if "time" in ds.coords and ds.coords["time"].size:
@@ -255,7 +320,10 @@ def main() -> None:
     )
     parser.add_argument("input", type=Path, help="Input SST NetCDF")
     parser.add_argument("output", type=Path, help="Output front NetCDF")
-    parser.add_argument("--variable", required=True, help="SST variable, e.g. analysed_sst or thetao")
+    parser.add_argument(
+        "--variable",
+        help="SST variable, e.g. analysed_sst, thetao, temperature or sst. If omitted, a common SST name is inferred.",
+    )
     parser.add_argument("--smoothing-km", type=float, default=5.0)
     parser.add_argument("--canny-low", type=int, default=5)
     parser.add_argument("--canny-high", type=int, default=15)
