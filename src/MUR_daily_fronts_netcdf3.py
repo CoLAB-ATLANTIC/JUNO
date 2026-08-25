@@ -20,7 +20,10 @@ import xarray as xr
 import os
 import cv2
 import matplotlib
-from scipy.ndimage import gaussian_filter
+import geopandas
+from rasterio.features import geometry_mask
+from rasterio.transform import from_bounds
+from scipy.ndimage import binary_erosion, distance_transform_edt, gaussian_filter
 from datetime import date, timedelta, datetime
 #import wget
 from math import floor
@@ -40,6 +43,55 @@ def get_base_dir():
 
 def get_data_dir():
     return os.environ.get("JUNO_DATA_DIR", os.path.join(get_base_dir(), "data"))
+
+
+def get_atlantic_shapefile_path(data_dir):
+    return os.environ.get(
+        "JUNO_ATLANTIC_SHAPEFILE",
+        os.path.join(data_dir, "atlantic_shapefile/aoi_atlantic_clip.shp"),
+    )
+
+
+def create_open_ocean_mask(data_xarray, shapefile_path):
+    """
+    Rasterize the open-ocean AOI shapefile onto the MUR lat/lon grid.
+    True means Canny is allowed to detect fronts in that pixel.
+    """
+
+    if not os.path.exists(shapefile_path):
+        raise FileNotFoundError(
+            "Atlantic AOI shapefile not found at "
+            f"{shapefile_path}. Mount/copy the shapefile components "
+            "(.shp, .shx, .dbf, .prj) into the data/atlantic_shapefile folder "
+            "or set JUNO_ATLANTIC_SHAPEFILE to the correct .shp path."
+        )
+
+    ocean_area = geopandas.read_file(shapefile_path).to_crs("EPSG:4326")
+    lons = data_xarray["lon"].values
+    lats = data_xarray["lat"].values
+    height = len(lats)
+    width = len(lons)
+    lon_res = abs(lons[1] - lons[0])
+    lat_res = abs(lats[1] - lats[0])
+
+    transform = from_bounds(
+        float(lons.min() - lon_res / 2),
+        float(lats.min() - lat_res / 2),
+        float(lons.max() + lon_res / 2),
+        float(lats.max() + lat_res / 2),
+        width,
+        height,
+    )
+
+    # geometry_mask is north-up; MUR arrays here are latitude-ascending.
+    north_up_mask = geometry_mask(
+        ocean_area.geometry,
+        out_shape=(height, width),
+        transform=transform,
+        invert=True,
+        all_touched=True,
+    )
+    return np.flipud(north_up_mask)
 
 
 
@@ -68,7 +120,14 @@ def get_data(nc_path):
 
 #################################### CANNY ALGORITHM ##########################################################
 
-def canny_front_detection_1day(data_xarray, thresh_min=120, thresh_max=220, apertureSize=5, sigma=5):
+def canny_front_detection_1day(
+    data_xarray,
+    open_ocean_mask=None,
+    thresh_min=120,
+    thresh_max=220,
+    apertureSize=5,
+    sigma=5,
+):
     
     """
     This function receives a dataframe with MUR data for a individual day and returns the array 
@@ -78,25 +137,53 @@ def canny_front_detection_1day(data_xarray, thresh_min=120, thresh_max=220, aper
     """
     
     #Get the sst array in the right shape
-    sst = data_xarray['analysed_sst'][0,:,:].values
+    sst = data_xarray['analysed_sst'][0,:,:].values.astype(float)
+    valid_mask = np.isfinite(sst)
+    if open_ocean_mask is not None:
+        valid_mask = valid_mask & open_ocean_mask
+
+    if not np.any(valid_mask):
+        raise ValueError("No valid open-ocean SST pixels available for Canny front detection.")
+
     #sst = np.array(data_xarray['analysed_sst'])
     #sst = np.squeeze(sst)
     #Convert Temperature values to uint8 format with values in the range of 0-255
-    sst_final = ((sst - np.nanmin(sst)) * (1/(np.nanmax(sst) - np.nanmin(sst)) * 255)).astype('uint8')
+    sst_min = np.nanmin(sst[valid_mask])
+    sst_max = np.nanmax(sst[valid_mask])
+    sst_range = sst_max - sst_min
+    if sst_range == 0:
+        return np.full_like(sst, np.nan, dtype=float)
+
+    sst_final = ((sst - sst_min) * (1 / sst_range * 255))
+    sst_final[~valid_mask] = np.nan
+
+    if not np.all(valid_mask):
+        nearest_valid_indexes = distance_transform_edt(
+            ~valid_mask,
+            return_distances=False,
+            return_indices=True,
+        )
+        nearest_valid_values = sst_final[tuple(nearest_valid_indexes)]
+        sst_final[~valid_mask] = nearest_valid_values[~valid_mask]
+
+    sst_final = sst_final.astype('uint8')
     sst_final = np.flipud(sst_final)   #flipud -> Reverse the order of elements along axis 0 (up/down).
+    canny_mask = np.flipud(valid_mask)
     #in case we want to apply a gaussian filter with a certain sigma value (by default is 0)
     sst_final = gaussian_filter(sst_final, sigma=sigma)   
 
     
     #apply the canny algorithm and plot the image with the edges
     canny = cv2.Canny(sst_final, thresh_min, thresh_max, apertureSize=apertureSize, L2gradient=False)
+    canny[~binary_erosion(canny_mask, structure=np.ones((3, 3)))] = 0
     
     canny[canny == 255] = 1
     
     canny = canny.astype('float')
-    canny[canny == 0] = 'nan'
+    canny[canny == 0] = np.nan
     
-    canny_front = np.flipud(canny)    
+    canny_front = np.flipud(canny)
+    canny_front[~valid_mask] = np.nan
     
     
     return canny_front
@@ -252,11 +339,12 @@ def main():
     nc_path = os.path.join(output_file)
     
     xarray_mur = get_data(nc_path)
+    open_ocean_mask = create_open_ocean_mask(xarray_mur, get_atlantic_shapefile_path(data_dir))
     
     
     sst_image = real_sst_image(xarray_mur)
     
-    canny_front = canny_front_detection_1day(xarray_mur)
+    canny_front = canny_front_detection_1day(xarray_mur, open_ocean_mask=open_ocean_mask)
     
     boa_front = BOA_aplication(xarray_mur, threshold=0.05)
     
