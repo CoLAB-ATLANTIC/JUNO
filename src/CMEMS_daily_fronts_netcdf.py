@@ -53,6 +53,25 @@ def get_copernicus_credentials(data_dir):
     return lines[0].strip(), lines[1].strip()
 
 
+def get_atlantic_shapefile_path(data_dir):
+    return os.environ.get(
+        "JUNO_ATLANTIC_SHAPEFILE",
+        os.path.join(data_dir, "atlantic_shapefile/aoi_atlantic_clip.shp"),
+    )
+
+
+def validate_atlantic_shapefile(data_dir):
+    shapefile_path = get_atlantic_shapefile_path(data_dir)
+    if not os.path.exists(shapefile_path):
+        raise FileNotFoundError(
+            "Atlantic AOI shapefile not found at "
+            f"{shapefile_path}. Mount/copy the shapefile components "
+            "(.shp, .shx, .dbf, .prj) into /data/atlantic_shapefile "
+            "or set JUNO_ATLANTIC_SHAPEFILE to the correct .shp path."
+        )
+    return shapefile_path
+
+
 
 ######################################### IMPORT DATA ################################################################
 
@@ -257,6 +276,7 @@ def main():
     data_dir = get_data_dir()
     #base_path = os.path.join(base_path, 'projects/JUNO')       #servidor
     #base_path = '/home/luisfigueiredo/edgeDetection/'
+    shpfile_path = validate_atlantic_shapefile(data_dir)
     
     USERNAME, PASSWORD = get_copernicus_credentials(data_dir)
     
@@ -291,10 +311,8 @@ def main():
         maximum_longitude=50.04166666666667,
         minimum_latitude=-70.04166666666666,
         maximum_latitude=80.04166666666667,
-        # minimum_depth=0.494,
-        # maximum_depth=0.494,
-        minimum_depth=0,
-        maximum_depth=1,
+        minimum_depth=0.49402499198913574,
+        maximum_depth=0.49402499198913574,
         username=USERNAME,
         password=PASSWORD,
         start_datetime=date_txt,
@@ -385,12 +403,7 @@ def main():
     #nc_file = os.path.join(nc_file, 'projects/JUNO/data/CMEMS_daily_fronts_netcdf/' + day_txt.replace("-","") + '00.nc')
     
     #shape_path = os.getcwd()
-    SHPFILE_PATH = os.environ.get(
-        "JUNO_ATLANTIC_SHAPEFILE",
-        os.path.join(data_dir, 'atlantic_shapefile/aoi_atlantic_clip.shp'),
-    )
- 
-    sf = geopandas.read_file(SHPFILE_PATH)
+    sf = geopandas.read_file(shpfile_path)
     #sf.set_crs('epsg:4326', inplace = True, allow_override = True)
  
     netcdf_file = xr.open_dataset(nc_file, engine='netcdf4')
@@ -416,9 +429,13 @@ def main():
     clipped_nc["time"].attrs["units"] = "days since 1970-01-01"
     clipped_nc["time"].attrs["calendar"] = "gregorian"
 
-    # Close the original dataset to free up the file
+    clipped_nc.load()
+
+    # Close the original dataset before replacing the same NetCDF path.
     netcdf_file.close()
-    clipped_nc.to_netcdf(nc_file)
+    temp_nc_file = nc_file + ".tmp"
+    clipped_nc.to_netcdf(temp_nc_file)
+    os.replace(temp_nc_file, nc_file)
     
 
 if __name__ == "__main__":
