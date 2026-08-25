@@ -12,7 +12,7 @@ The main processing steps are:
 4. Download and reduce the AVISO datasets to the required variables.
 5. Extract eddies within the configured geographic and temporal boundaries.
 6. Identify the contours and centres of cyclonic and anticyclonic eddies.
-7. Generate daily images and NetCDF files containing the eddy shapes and centroids.
+7. Rasterize eddy shapes and centroids in memory and write daily NetCDF files.
 8. Remove intermediate files after successful processing to reduce storage usage.
 
 The processing is resumable so after an interruption the script processes only the dates that are still missing.
@@ -22,24 +22,24 @@ The processing is resumable so after an interruption the script processes only t
 
 #Import libraries
 
+import argparse
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import xarray as xr
 from shapely.geometry import Polygon
-import matplotlib.pyplot as plt
 import datetime
 from datetime import timedelta
-from bs4 import BeautifulSoup
 import requests
 import subprocess
 import json
 import re
+import time
 import xml.etree.ElementTree as ET
-plt.rcParams["figure.figsize"] = 12, 10
-plt.rcParams["figure.autolayout"] = True
-import cv2
 import netCDF4 as nc
+
+
+DATE_FORMAT = "%Y%m%d"
+DEFAULT_RECENT_WINDOW_DAYS = int(os.environ.get("EDDIES_RECENT_WINDOW_DAYS", "15"))
 
 
 def get_base_dir():
@@ -54,7 +54,6 @@ def get_aviso_dirs():
     data_dir = get_data_dir()
     return {
         "data": os.path.join(data_dir, "AVISO_data"),
-        "images": os.path.join(data_dir, "AVISO_images"),
         "netcdf": os.path.join(data_dir, "AVISO_netcdf"),
     }
 
@@ -63,6 +62,130 @@ def get_aviso_dirs():
 
 ################################ Usar subprocess para usar o python como se estivesse na command line ###############################################
 ######################################### Download the eddies file exactly how i wanted it ##########################################################
+
+
+DOWNLOAD_CHUNK_SIZE = 1024 * 1024
+DOWNLOAD_RETRIES = int(os.environ.get("EDDIES_DOWNLOAD_RETRIES", "5"))
+DOWNLOAD_RETRY_DELAY_SECONDS = int(os.environ.get("EDDIES_DOWNLOAD_RETRY_DELAY_SECONDS", "60"))
+DOWNLOAD_TIMEOUT = (30, 600)
+RASTER_WIDTH = int(os.environ.get("EDDIES_RASTER_WIDTH", "1200"))
+RASTER_HEIGHT = int(os.environ.get("EDDIES_RASTER_HEIGHT", "1000"))
+RASTER_LON_MIN = float(os.environ.get("EDDIES_RASTER_LON_MIN", "-20"))
+RASTER_LON_MAX = float(os.environ.get("EDDIES_RASTER_LON_MAX", "-4"))
+RASTER_LAT_MIN = float(os.environ.get("EDDIES_RASTER_LAT_MIN", "33"))
+RASTER_LAT_MAX = float(os.environ.get("EDDIES_RASTER_LAT_MAX", "46"))
+RASTER_LINE_RADIUS = int(os.environ.get("EDDIES_RASTER_LINE_RADIUS", "1"))
+RASTER_POINT_RADIUS = int(os.environ.get("EDDIES_RASTER_POINT_RADIUS", "1"))
+DEFAULT_AVISO_DATASET_PATH = ("dataset-duacs-nrt-value-added-eddy-trajectory")
+AVISO_HOST = "https://tds-odatis.aviso.altimetry.fr"
+AVISO_DATASET_PATH = os.environ.get("AVISO_EDDIES_DATASET_PATH", DEFAULT_AVISO_DATASET_PATH).strip("/")
+AVISO_FILESERVER_URL = f"{AVISO_HOST}/thredds/fileServer/{AVISO_DATASET_PATH}"
+CATALOG_URL = f"{AVISO_HOST}/thredds/catalog/{AVISO_DATASET_PATH}/catalog.xml"
+EDDIES_FILE_GROUPS = tuple(
+    group.strip().lower()
+    for group in os.environ.get(
+        "EDDIES_FILE_GROUPS",
+        "long,short",
+    ).split(",")
+    if group.strip()
+)
+
+if not EDDIES_FILE_GROUPS:
+    raise RuntimeError("EDDIES_FILE_GROUPS must contain at least one file group")
+
+
+def parse_content_range_total(content_range):
+    if not content_range:
+        return None
+
+    match = re.fullmatch(r"bytes \d+-\d+/(\d+|\*)", content_range.strip())
+    if match is None or match.group(1) == "*":
+        return None
+
+    return int(match.group(1))
+
+
+def download_with_resume(download_url, output_file, temporary_file, auth):
+    last_error = None
+
+    for attempt in range(1, DOWNLOAD_RETRIES + 1):
+        resume_from = (
+            os.path.getsize(temporary_file)
+            if os.path.exists(temporary_file)
+            else 0
+        )
+        headers = {}
+        mode = "wb"
+
+        if resume_from > 0:
+            headers["Range"] = f"bytes={resume_from}-"
+            mode = "ab"
+            print(
+                f"Resuming download from byte {resume_from} "
+                f"(attempt {attempt}/{DOWNLOAD_RETRIES})",
+                flush=True,
+            )
+        else:
+            print(
+                f"Starting download attempt {attempt}/{DOWNLOAD_RETRIES}",
+                flush=True,
+            )
+
+        try:
+            with requests.get(
+                download_url,
+                auth=auth,
+                headers=headers,
+                stream=True,
+                timeout=DOWNLOAD_TIMEOUT,
+            ) as response:
+                if resume_from > 0 and response.status_code == 200:
+                    print(
+                        "AVISO did not honor the resume request; "
+                        "restarting the download.",
+                        flush=True,
+                    )
+                    resume_from = 0
+                    mode = "wb"
+
+                response.raise_for_status()
+
+                expected_size = parse_content_range_total(
+                    response.headers.get("Content-Range")
+                )
+                if expected_size is None and response.headers.get("Content-Length"):
+                    expected_size = resume_from + int(response.headers["Content-Length"])
+
+                with open(temporary_file, mode) as file:
+                    for chunk in response.iter_content(
+                        chunk_size=DOWNLOAD_CHUNK_SIZE
+                    ):
+                        if chunk:
+                            file.write(chunk)
+
+            actual_size = os.path.getsize(temporary_file)
+            if expected_size is not None and actual_size != expected_size:
+                raise RuntimeError(
+                    f"Downloaded {actual_size} bytes, expected {expected_size}"
+                )
+
+            os.replace(temporary_file, output_file)
+            return
+
+        except (requests.RequestException, OSError, RuntimeError) as error:
+            last_error = error
+            print(
+                f"Download attempt {attempt}/{DOWNLOAD_RETRIES} failed: {error}",
+                flush=True,
+            )
+
+            if attempt < DOWNLOAD_RETRIES:
+                time.sleep(DOWNLOAD_RETRY_DELAY_SECONDS)
+
+    raise RuntimeError(
+        f"Failed after {DOWNLOAD_RETRIES} download attempts. "
+        f"Partial file kept for resume: {temporary_file}. Last error: {last_error}"
+    )
 
 
 def download_eddie(filename, path):
@@ -84,9 +207,7 @@ def download_eddie(filename, path):
 
     os.makedirs(path, exist_ok=True)
 
-    download_url = ("https://tds-odatis.aviso.altimetry.fr/thredds/fileServer/"
-                    "dataset-duacs-nrt-value-added-eddy-trajectory/"
-                    f"{filename}")
+    download_url = f"{AVISO_FILESERVER_URL}/{filename}"
 
     output_file = os.path.join(path, filename)
     temporary_file = output_file + ".part"
@@ -99,25 +220,15 @@ def download_eddie(filename, path):
         print(f"Destination: {output_file}")
 
         try:
-            with requests.get(download_url, auth=(eddies_user, eddies_pass), stream=True, timeout=(30, 600)) as response:
-                response.raise_for_status()
-
-                with open(temporary_file, "wb") as file:
-                    for chunk in response.iter_content(
-                        chunk_size=1024 * 1024
-                    ):
-                        if chunk:
-                            file.write(chunk)
-
-            # Rename only after a successful download
-            os.replace(temporary_file, output_file)
-
+            download_with_resume(
+                download_url,
+                auth=(eddies_user, eddies_pass),
+                output_file=output_file,
+                temporary_file=temporary_file,
+            )
             print(f"Download completed: {output_file}")
 
-        except requests.RequestException as error:
-            if os.path.exists(temporary_file):
-                os.remove(temporary_file)
-
+        except RuntimeError as error:
             raise RuntimeError(f"Failed to download {filename} from AVISO: {error}") from error
 
     else:
@@ -194,7 +305,7 @@ def slice_netcdf(filepath, input_filename, lat_min, lat_max, lon_min, lon_max, d
     #we want information regarding the last 7 days of the netcdf
     date_init = file_last_date - np.timedelta64(7,'D')
     
-    file_path = os.path.join(filepath + input_filename)         #'test_slice.nc'
+    file_path = os.path.join(filepath, input_filename)         #'test_slice.nc'
     data = xr.load_dataset(file_path)      # importar o netcdf como xarray
 
 
@@ -234,7 +345,10 @@ def slice_netcdf(filepath, input_filename, lat_min, lat_max, lon_min, lon_max, d
     test = xr.merge([lat, lon, effective_contour_lon, effective_contour_lat, time, tracking])
     test.attrs = att
 
-    netcdf_save_folder = os.path.join(filepath + eddie_type + '_' + data_final_str + '.nc')
+    netcdf_save_folder = os.path.join(
+        filepath,
+        eddie_type + '_' + data_final_str + '.nc',
+    )
     # Filtering integer variables introduces NaNs. Clear the source encodings
     # so xarray does not try to serialize those NaNs back into integer dtypes.
     for variable_name in test.variables:
@@ -259,7 +373,7 @@ def eddie_tracking(filepath, filename):
     For each eddie might be several centroids since that eddie might be identified several times for the netcdf timeframe 
     """
     
-    netcdf_path = os.path.join(filepath + filename)
+    netcdf_path = os.path.join(filepath, filename)
     data_xr = xr.load_dataset(netcdf_path)
 
     track = data_xr['track'].values
@@ -315,105 +429,100 @@ def eddie_tracking(filepath, filename):
 
 
 
+def empty_front_array():
+    return np.full((RASTER_HEIGHT, RASTER_WIDTH), np.nan, dtype="float32")
+
+
+def coordinate_to_pixel(lon, lat):
+    col = round(
+        (lon - RASTER_LON_MIN)
+        / (RASTER_LON_MAX - RASTER_LON_MIN)
+        * (RASTER_WIDTH - 1)
+    )
+    row = round(
+        (lat - RASTER_LAT_MIN)
+        / (RASTER_LAT_MAX - RASTER_LAT_MIN)
+        * (RASTER_HEIGHT - 1)
+    )
+
+    return int(row), int(col)
+
+
+def mark_pixel(array, row, col, radius):
+    row_min = max(0, row - radius)
+    row_max = min(array.shape[0], row + radius + 1)
+    col_min = max(0, col - radius)
+    col_max = min(array.shape[1], col + radius + 1)
+
+    if row_min < row_max and col_min < col_max:
+        array[row_min:row_max, col_min:col_max] = 1
+
+
+def draw_line(array, start_lon, start_lat, end_lon, end_lat):
+    start_row, start_col = coordinate_to_pixel(start_lon, start_lat)
+    end_row, end_col = coordinate_to_pixel(end_lon, end_lat)
+
+    steps = max(abs(end_row - start_row), abs(end_col - start_col)) + 1
+    if steps <= 0:
+        return
+
+    rows = np.linspace(start_row, end_row, steps)
+    cols = np.linspace(start_col, end_col, steps)
+
+    for row, col in zip(rows, cols):
+        mark_pixel(array, int(round(row)), int(round(col)), RASTER_LINE_RADIUS)
+
+
+def rasterize_contours(contour_lons, contour_lats):
+    array = empty_front_array()
+
+    for lons, lats in zip(contour_lons, contour_lats):
+        points = [
+            (lon, lat)
+            for lon, lat in zip(lons, lats)
+            if np.isfinite(lon) and np.isfinite(lat)
+        ]
+
+        if len(points) == 1:
+            row, col = coordinate_to_pixel(points[0][0], points[0][1])
+            mark_pixel(array, row, col, RASTER_LINE_RADIUS)
+            continue
+
+        for (start_lon, start_lat), (end_lon, end_lat) in zip(points, points[1:]):
+            draw_line(array, start_lon, start_lat, end_lon, end_lat)
+
+    return array
+
+
+def rasterize_points(point_lons, point_lats):
+    array = empty_front_array()
+
+    for lon, lat in zip(point_lons, point_lats):
+        if not np.isfinite(lon) or not np.isfinite(lat):
+            continue
+
+        row, col = coordinate_to_pixel(lon, lat)
+        mark_pixel(array, row, col, RASTER_POINT_RADIUS)
+
+    return array
+
+
 def eddies_arrays(eddie_cyc_lons, eddie_cyc_lats, centro_cyc_x, centro_cyc_y, eddie_anti_lons, eddie_anti_lats, centro_anti_x, centro_anti_y, file_last_date_str):
     
     """
-    Function to save 4 images as .png files: the shapes of the eddies (cyclonic and anticyclonic) and the respective centroids.
-    Then it loads the 4 images and converts them to a numpy array 
+    Rasterize eddy shapes and centroids into arrays without writing plots.
     """
-    
-
-    image_directory = get_aviso_dirs()["images"]
-    os.makedirs(image_directory, exist_ok=True)
-
-    #plot the shapes of the cyclonic eddies
-    fig = plt.figure(figsize=(12,10))
-    for i in range(len(eddie_cyc_lons)):
-        plt.plot(eddie_cyc_lons[i], eddie_cyc_lats[i], color='green')
-    plt.xlim([-20, -4]);
-    plt.ylim([33, 46]);
-    plt.axis('off');
-    shape_cyc_path = os.path.join(image_directory, 'shape_cyc_' + file_last_date_str + '.png')
-    plt.savefig(shape_cyc_path)
-    plt.close(fig)
-    
-    #array with cyclonic shape data
-    im_cyc = cv2.imread(shape_cyc_path)
-    array_cyc_shape = cv2.cvtColor(im_cyc, cv2.COLOR_BGR2GRAY).astype('float32')    # BGR -> GRAYSCALE
-    array_cyc_shape[array_cyc_shape<255] = 0
-    array_cyc_shape[array_cyc_shape==255] = np.nan
-    array_cyc_shape[array_cyc_shape==0] = 1
-    array_cyc_shape = np.flipud(array_cyc_shape)
-
-
-    #all the centroid of the cyclonic eddies identified in a particular period
-    fig = plt.figure(figsize=(12,10))
-    for j in range(len(centro_cyc_x)):
-        plt.scatter(centro_cyc_x[j], centro_cyc_y[j], marker='.', color='m', linewidths=0.1)
-    plt.xlim([-20, -4]);
-    plt.ylim([33, 46]);
-    plt.axis('off');
-    centers_cyc_path = os.path.join(image_directory, 'centers_cyc_' + file_last_date_str + '.png')
-    plt.savefig(centers_cyc_path)
-    plt.close(fig)
-    #array with cyclonic centroids data
-    im_cyc_centroids = cv2.imread(centers_cyc_path)
-    array_cyc_centroids = cv2.cvtColor(im_cyc_centroids, cv2.COLOR_BGR2GRAY).astype('float32')   # BGR -> GRAYSCALE
-    array_cyc_centroids[array_cyc_centroids<255] = 0
-    array_cyc_centroids[array_cyc_centroids==255] = np.nan
-    array_cyc_centroids[array_cyc_centroids==0] = 1
-    array_cyc_centroids = np.flipud(array_cyc_centroids)
-        
-    #save image of the shapes of the anticyclonic eddies
-    fig = plt.figure(figsize=(12,10))
-    for i in range(len(eddie_anti_lons)):
-        plt.plot(eddie_anti_lons[i], eddie_anti_lats[i], color='red')
-    plt.xlim([-20, -4]);
-    plt.ylim([33, 46]);
-    plt.axis('off');
-    shape_anti_path = os.path.join(image_directory, 'shape_anti_' + file_last_date_str + '.png')
-    plt.savefig(shape_anti_path)
-    plt.close(fig)
-    #array with anticyclonic shape data
-    im_anti = cv2.imread(shape_anti_path)
-    array_anti_shape = cv2.cvtColor(im_anti, cv2.COLOR_BGR2GRAY).astype('float32')    # BGR -> GRAYSCALE
-    array_anti_shape[array_anti_shape<255] = 0
-    array_anti_shape[array_anti_shape==255] = np.nan
-    array_anti_shape[array_anti_shape==0] = 1
-    array_anti_shape = np.flipud(array_anti_shape)
-
-    #all the centroid of the cyclonic eddies identified in a particular period
-    fig = plt.figure(figsize=(12,10))
-    for j in range(len(centro_anti_x)):
-        plt.scatter(centro_anti_x[j], centro_anti_y[j], marker='.', color='m', linewidths=0.1)
-    plt.xlim([-20, -4]);
-    plt.ylim([33, 46]);
-    plt.axis('off');
-    centers_anti_path = os.path.join(image_directory, 'centers_anti_' + file_last_date_str + '.png')
-    plt.savefig(centers_anti_path)
-    plt.close(fig)
-    #array with anticyclonic centroids data
-    im_anti_centroids = cv2.imread(centers_anti_path)
-    array_anti_centroids = cv2.cvtColor(im_anti_centroids, cv2.COLOR_BGR2GRAY).astype('float32') # BGR -> GRAYSCALE
-    array_anti_centroids[array_anti_centroids<255] = 0
-    array_anti_centroids[array_anti_centroids==255] = np.nan
-    array_anti_centroids[array_anti_centroids==0] = 1
-    array_anti_centroids = np.flipud(array_anti_centroids)
+    array_cyc_shape = rasterize_contours(eddie_cyc_lons, eddie_cyc_lats)
+    array_cyc_centroids = rasterize_points(centro_cyc_x, centro_cyc_y)
+    array_anti_shape = rasterize_contours(eddie_anti_lons, eddie_anti_lats)
+    array_anti_centroids = rasterize_points(centro_anti_x, centro_anti_y)
     
     return array_cyc_shape, array_cyc_centroids, array_anti_shape, array_anti_centroids
 
 
 
-AVISO_HOST = "https://tds-odatis.aviso.altimetry.fr"
-
-CATALOG_URL = (
-    f"{AVISO_HOST}/thredds/catalog/"
-    "dataset-duacs-nrt-value-added-eddy-trajectory/catalog.xml"
-)
-
-
 def request_eddy_filenames(eddies_user, eddies_pass):
-    """Return the newest cyclonic and anticyclonic AVISO filenames."""
+    """Return the configured cyclonic and anticyclonic AVISO filenames."""
     try:
         response = requests.get(
             CATALOG_URL,
@@ -435,25 +544,198 @@ def request_eddy_filenames(eddies_user, eddies_pass):
         if name.lower().endswith(".nc"):
             filenames.append(name)
 
-    filenames = list(dict.fromkeys(filenames))
-    cyclonic_files = [
-        name for name in filenames
-        if "cyclonic" in name.lower()
-        and "anticyclonic" not in name.lower()
-    ]
-    anticyclonic_files = [
-        name for name in filenames
-        if "anticyclonic" in name.lower()
-    ]
+    filenames = sorted(dict.fromkeys(filenames))
+
+    def select_files(polarity):
+        polarity = polarity.lower()
+        selected = []
+        polarity_matches = [
+            name
+            for name in filenames
+            if polarity in name.lower()
+            and (polarity != "cyclonic" or "anticyclonic" not in name.lower())
+        ]
+
+        for group in EDDIES_FILE_GROUPS:
+            matches = [
+                name
+                for name in polarity_matches
+                if group in name.lower()
+            ]
+
+            if matches:
+                selected.append(max(matches))
+
+        if not selected and polarity_matches:
+            selected.append(max(polarity_matches))
+
+        return selected
+
+    cyclonic_files = select_files("cyclonic")
+    anticyclonic_files = select_files("anticyclonic")
 
     if not cyclonic_files or not anticyclonic_files:
         raise RuntimeError("Could not identify both eddy files in the AVISO catalogue. " f"NetCDF files found: {filenames}")
 
-    cyclonic_name = max(cyclonic_files)
-    anticyclonic_name = max(anticyclonic_files)
-    print(f"Cyclonic file found: {cyclonic_name}", flush=True)
-    print(f"Anticyclonic file found: {anticyclonic_name}", flush=True)
-    return cyclonic_name, anticyclonic_name
+    print(f"AVISO catalogue: {CATALOG_URL}", flush=True)
+    print(f"Cyclonic files found: {cyclonic_files}", flush=True)
+    print(f"Anticyclonic files found: {anticyclonic_files}", flush=True)
+    return cyclonic_files, anticyclonic_files
+
+
+def dates_from_filename(filename):
+    dates = []
+
+    for date_text in re.findall(r"\d{8}", filename):
+        try:
+            dates.append(datetime.datetime.strptime(date_text, "%Y%m%d"))
+        except ValueError:
+            pass
+
+    return dates
+
+
+def available_date_range(filenames):
+    dates = []
+
+    for filename in filenames:
+        dates.extend(dates_from_filename(filename))
+
+    if not dates:
+        raise RuntimeError(f"Could not extract dates from AVISO filenames: {filenames}")
+
+    return min(dates), max(dates)
+
+
+def parse_yyyymmdd(date_text, label):
+    try:
+        return datetime.datetime.strptime(date_text, DATE_FORMAT)
+    except ValueError as error:
+        raise ValueError(f"{label} must use YYYYMMDD format, got {date_text!r}") from error
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Generate daily AVISO eddies NetCDF files. By default it processes "
+            "only the latest AVISO date minus 15 days through the latest AVISO date."
+        )
+    )
+    parser.add_argument(
+        "--start-date",
+        help="First day to process, in YYYYMMDD format.",
+    )
+    parser.add_argument(
+        "--end-date",
+        help="Last day to process, in YYYYMMDD format.",
+    )
+    return parser.parse_args()
+
+
+def configured_date(cli_value, env_name, label):
+    if cli_value:
+        return parse_yyyymmdd(cli_value, label)
+
+    env_value = os.environ.get(env_name)
+    if env_value:
+        return parse_yyyymmdd(env_value, env_name)
+
+    return None
+
+
+def resolve_processing_range(args, aviso_start_date, latest_aviso_date):
+    requested_start_date = configured_date(
+        args.start_date,
+        "EDDIES_START_DATE",
+        "--start-date",
+    )
+    requested_end_date = configured_date(
+        args.end_date,
+        "EDDIES_END_DATE",
+        "--end-date",
+    )
+
+    final_date = requested_end_date or latest_aviso_date
+
+    if requested_start_date:
+        first_date = requested_start_date
+    else:
+        first_date = final_date - timedelta(days=DEFAULT_RECENT_WINDOW_DAYS)
+        if first_date < aviso_start_date:
+            first_date = aviso_start_date
+
+    if final_date > latest_aviso_date:
+        raise RuntimeError(
+            f"End date is later than the latest AVISO date "
+            f"({latest_aviso_date:%Y%m%d})"
+        )
+
+    if first_date < aviso_start_date:
+        raise RuntimeError(
+            f"Start date is earlier than the first AVISO date "
+            f"({aviso_start_date:%Y%m%d})"
+        )
+
+    if first_date > final_date:
+        raise RuntimeError("Start date must be before or equal to end date")
+
+    return first_date, final_date
+
+
+def eddy_group_from_filename(filename):
+    filename_lower = filename.lower()
+
+    for group in EDDIES_FILE_GROUPS:
+        if group in filename_lower:
+            return group
+
+    return os.path.splitext(os.path.basename(filename_lower))[0]
+
+
+def process_eddy_sources(
+    source_filenames,
+    polarity,
+    data_directory,
+    data_final_str,
+):
+    all_eddy_lats = []
+    all_eddy_lons = []
+    all_centroid_y = []
+    all_centroid_x = []
+
+    for source_filename in source_filenames:
+        source_slice_name = os.path.splitext(source_filename)[0] + "_slice.nc"
+        source_group = eddy_group_from_filename(source_filename)
+        eddie_type = f"{polarity}_{source_group}"
+
+        slice_netcdf(
+            filepath=data_directory,
+            input_filename=source_slice_name,
+            lat_min=35,
+            lat_max=45,
+            lon_min=330,
+            lon_max=360,
+            data_final_str=data_final_str,
+            eddie_type=eddie_type,
+        )
+
+        eddy_lats, eddy_lons, centroid_y, centroid_x = eddie_tracking(
+            data_directory,
+            f"{eddie_type}_{data_final_str}.nc",
+        )
+        all_eddy_lats.extend(eddy_lats)
+        all_eddy_lons.extend(eddy_lons)
+        all_centroid_y.extend(centroid_y)
+        all_centroid_x.extend(centroid_x)
+
+        intermediate = os.path.join(
+            data_directory,
+            f"{eddie_type}_{data_final_str}.nc",
+        )
+        if os.path.exists(intermediate):
+            os.remove(intermediate)
+
+    return all_eddy_lats, all_eddy_lons, all_centroid_y, all_centroid_x
 
 
 
@@ -516,13 +798,12 @@ def create_netcdf(data_final_str, array_cyc_shape, array_cyc_centroids, array_an
 
 
 def main():
+    args = parse_args()
     aviso_dirs = get_aviso_dirs()
     data_directory = aviso_dirs["data"]
-    image_directory = aviso_dirs["images"]
     output_directory = aviso_dirs["netcdf"]
 
     os.makedirs(data_directory, exist_ok=True)
-    os.makedirs(image_directory, exist_ok=True)
     os.makedirs(output_directory, exist_ok=True)
 
     eddies_user = os.environ.get("EDDIES_USER")
@@ -530,12 +811,13 @@ def main():
     if not eddies_user or not eddies_pass:
         raise RuntimeError("EDDIES_USER or EDDIES_PASS is not defined")
 
-    cyclonic_name, anticyclonic_name = request_eddy_filenames(eddies_user, eddies_pass)
-
-    latest_match = re.search(r"_(\d{8})\.nc$", cyclonic_name)
-    if latest_match is None:
-        raise RuntimeError(f"Could not extract the latest date from {cyclonic_name}")
-    latest_aviso_date = datetime.datetime.strptime(latest_match.group(1), "%Y%m%d")
+    cyclonic_names, anticyclonic_names = request_eddy_filenames(
+        eddies_user,
+        eddies_pass,
+    )
+    aviso_start_date, latest_aviso_date = available_date_range(
+        cyclonic_names + anticyclonic_names
+    )
 
     existing_dates = set()
     for filename in os.listdir(output_directory):
@@ -543,17 +825,24 @@ def main():
         if match:
             existing_dates.add(datetime.datetime.strptime(match.group(1), "%Y%m%d"))
 
-    # Preserve the historical start of the existing collection. If the output
-    # directory is empty, create only the newest available day.
-    first_date = min(existing_dates) if existing_dates else latest_aviso_date
+    first_date, final_date = resolve_processing_range(
+        args,
+        aviso_start_date,
+        latest_aviso_date,
+    )
+
     missing_dates = []
     candidate_date = first_date
-    while candidate_date <= latest_aviso_date:
+    while candidate_date <= final_date:
         if candidate_date not in existing_dates:
             missing_dates.append(candidate_date)
         candidate_date += timedelta(days=1)
 
-    print(f"First local date: {first_date:%Y-%m-%d}", flush=True)
+    print(f"AVISO dataset path: {AVISO_DATASET_PATH}", flush=True)
+    print(f"AVISO first available date: {aviso_start_date:%Y-%m-%d}", flush=True)
+    print(f"Default recent window: {DEFAULT_RECENT_WINDOW_DAYS} days", flush=True)
+    print(f"First date to process: {first_date:%Y-%m-%d}", flush=True)
+    print(f"Last date to process: {final_date:%Y-%m-%d}", flush=True)
     print(f"Latest AVISO date: {latest_aviso_date:%Y-%m-%d}", flush=True)
     print(f"Missing dates to process: {len(missing_dates)}", flush=True)
 
@@ -561,17 +850,14 @@ def main():
         print("No missing dates. Nothing to process.", flush=True)
         return
 
-    download_eddie(cyclonic_name, data_directory)
-    download_eddie(anticyclonic_name, data_directory)
+    source_filenames = cyclonic_names + anticyclonic_names
 
-    cyclonic_slice_name = os.path.splitext(cyclonic_name)[0] + "_slice.nc"
-    anticyclonic_slice_name = (
-        os.path.splitext(anticyclonic_name)[0] + "_slice.nc"
-    )
+    for source_filename in source_filenames:
+        download_eddie(source_filename, data_directory)
 
     # The complete downloaded files are no longer needed after ncks creates
     # the reduced files.
-    for filename in (cyclonic_name, anticyclonic_name):
+    for filename in source_filenames:
         full_path = os.path.join(data_directory, filename)
         if os.path.exists(full_path):
             os.remove(full_path)
@@ -585,29 +871,18 @@ def main():
                 flush=True,
             )
 
-            slice_netcdf(
-                filepath=data_directory + "/",
-                input_filename=cyclonic_slice_name,
-                lat_min=35,
-                lat_max=45,
-                lon_min=330,
-                lon_max=360,
-                data_final_str=data_final_str,
-                eddie_type="cyclonic",
+            cyc = process_eddy_sources(
+                cyclonic_names,
+                "cyclonic",
+                data_directory,
+                data_final_str,
             )
-            slice_netcdf(
-                filepath=data_directory + "/",
-                input_filename=anticyclonic_slice_name,
-                lat_min=35,
-                lat_max=45,
-                lon_min=330,
-                lon_max=360,
-                data_final_str=data_final_str,
-                eddie_type="anticyclonic",
+            anti = process_eddy_sources(
+                anticyclonic_names,
+                "anticyclonic",
+                data_directory,
+                data_final_str,
             )
-
-            cyc = eddie_tracking(data_directory + "/", f"cyclonic_{data_final_str}.nc")
-            anti = eddie_tracking(data_directory + "/", f"anticyclonic_{data_final_str}.nc")
             eddie_cyc_lats, eddie_cyc_lons, centro_cyc_y, centro_cyc_x = cyc
             eddie_anti_lats, eddie_anti_lons, centro_anti_y, centro_anti_x = anti
 
@@ -624,17 +899,22 @@ def main():
             )
             create_netcdf(data_final_str, *arrays)
 
-            # These daily intermediate files can be recreated and consume
-            # substantial space, so remove them after successful output.
-            for prefix in ("cyclonic", "anticyclonic"):
-                intermediate = os.path.join(
-                    data_directory, f"{prefix}_{data_final_str}.nc"
-                )
-                if os.path.exists(intermediate):
-                    os.remove(intermediate)
     finally:
         # Keep cleanup safe even when processing is interrupted or fails.
-        for filename in (cyclonic_slice_name, anticyclonic_slice_name):
+        for filename in source_filenames:
+            sliced_name = os.path.splitext(filename)[0] + "_slice.nc"
+            sliced_path = os.path.join(data_directory, sliced_name)
+            if os.path.exists(sliced_path):
+                os.remove(sliced_path)
+
+        for filename in os.listdir(data_directory):
+            if not filename.endswith(".nc"):
+                continue
+            if not (
+                filename.startswith("cyclonic_")
+                or filename.startswith("anticyclonic_")
+            ):
+                continue
             sliced_path = os.path.join(data_directory, filename)
             if os.path.exists(sliced_path):
                 os.remove(sliced_path)
