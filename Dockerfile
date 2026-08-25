@@ -7,6 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     JUNO_BASE_DIR=/app \
     JUNO_DATA_DIR=/data \
     JUNO_LOG_DIR=/logs \
+    TZ=Europe/Lisbon \
     PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
@@ -15,6 +16,7 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         cron \
+        tzdata \
         nco \
         ca-certificates \
         libglib2.0-0 \

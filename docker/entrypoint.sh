@@ -8,6 +8,11 @@ export JUNO_LOG_DIR="${JUNO_LOG_DIR:-/logs}"
 
 mkdir -p "${JUNO_DATA_DIR}" "${JUNO_LOG_DIR}"
 
+if [[ -n "${TZ:-}" && -f "/usr/share/zoneinfo/${TZ}" ]]; then
+  ln -snf "/usr/share/zoneinfo/${TZ}" /etc/localtime
+  echo "${TZ}" > /etc/timezone
+fi
+
 #function to write the environment variables to a file (/etc/cron.d/juno-env) that can be sourced by the cron jobs
 #otherwise variables such EDDIE_USER, COPERNICUS_USERNAME, ... might not be visible to cron jobs
 write_cron_file() {
@@ -37,7 +42,7 @@ case "${1:-cron}" in
     exec python /app/src/CMEMS_daily_fronts_netcdf.py
     ;;
   eddies)
-    exec python /app/src/eddies_cron_complete.py
+    exec python /app/src/eddies_cron_complete.py "${@:2}"
     ;;
   *)
     exec "$@"

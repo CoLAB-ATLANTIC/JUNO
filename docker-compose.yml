@@ -10,6 +10,7 @@ services:
       JUNO_BASE_DIR: /app
       JUNO_DATA_DIR: /data
       JUNO_LOG_DIR: /logs
+      TZ: Europe/Lisbon
     volumes:
       - ./juno_data:/data
       - ./juno_logs:/logs
